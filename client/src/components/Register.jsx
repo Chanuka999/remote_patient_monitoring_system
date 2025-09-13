@@ -1,11 +1,37 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Register = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("");
+  const [number, setNumber] = useState("");
+
+  const navigate = useNavigate();
+
+  const handdleSubmit = (e) => {
+    e.preventDefault();
+    axios
+      .post("http://localhost:3000/register", {
+        name,
+        email,
+        password,
+        role,
+        number,
+      })
+      .then((result) => {
+        console.log(result), navigate("/login");
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 flex items-center justify-center p-6">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 space-y-6 transform transition-all duration-300 hover:shadow-xl">
-        <form className="space-y-6">
+        <form className="space-y-6" onSubmit={handdleSubmit}>
           <h2 className="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
             Create Your Account
           </h2>
@@ -24,7 +50,7 @@ const Register = () => {
               className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
               placeholder="Enter your name"
               required
-              // onChange={(e) => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
 
@@ -42,7 +68,7 @@ const Register = () => {
               className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
               placeholder="Enter your email"
               required
-              // onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
@@ -60,7 +86,7 @@ const Register = () => {
               className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
               placeholder="Enter your password"
               required
-              // onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
@@ -73,12 +99,12 @@ const Register = () => {
             </label>
             <input
               id="role"
-              type="text"
+              type="role"
               name="role"
               className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
               placeholder="Enter your role"
               required
-              // onChange={(e) => setRole(e.target.value)}
+              onChange={(e) => setRole(e.target.value)}
             />
           </div>
 
@@ -91,12 +117,12 @@ const Register = () => {
             </label>
             <input
               id="number"
-              type="tel"
+              type="number"
               name="number"
               className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
               placeholder="Enter your phone number"
               required
-              // onChange={(e) => setNumber(e.target.value)}
+              onChange={(e) => setNumber(e.target.value)}
             />
           </div>
 
