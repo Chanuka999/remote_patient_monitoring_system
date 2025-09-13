@@ -1,11 +1,45 @@
+import axios from "axios";
 import React from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handdleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const responce = await axios.post("http://localhost:3000/login", {
+        email,
+        password,
+      });
+      const { token, user } = responce.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      setError("");
+
+      if (user.role === "patient") {
+        navigate("/patientDashboard");
+      } else if (user.role === "doctor") {
+        navigate("/doctorDashboard");
+      } else if (user.role === "admin") {
+        navigate("/admimDashboard");
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.message || "Login failed.please try again."
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 flex items-center justify-center p-6">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 space-y-6 transform transition-all duration-300 hover:shadow-xl">
-        <form className="space-y-6">
+        <form className="space-y-6" onSubmit={handdleSubmit}>
           <h2 className="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
             Login Your Account
           </h2>
@@ -24,7 +58,7 @@ const Login = () => {
               className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
               placeholder="Enter your email"
               required
-              // onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
@@ -42,7 +76,7 @@ const Login = () => {
               className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
               placeholder="Enter your password"
               required
-              // onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
