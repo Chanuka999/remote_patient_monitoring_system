@@ -14,6 +14,8 @@ import Register from "./components/Register";
 import Login from "./components/Login";
 import PatientDashboardForm from "./components/PatientDashboardForm";
 import PatientDashboard from "./components/PatientDashboard";
+import DoctorDashboard from "./components/DoctorDashboard";
+import Appointment from "./components/Appointment";
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
@@ -22,11 +24,17 @@ function App() {
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
           <Route path="feature" element={<Feature />} />
+
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+          <Route
+            path="patientDashboardForm"
+            element={<PatientDashboardForm />}
+          />
+          <Route path="patientDashboard" element={<PatientDashboard />} />
+          <Route path="doctorDashboard" element={<DoctorDashboard />} />
+          <Route path="appointment" element={<Appointment />} />
         </Route>
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-        <Route path="patientDashboardForm" element={<PatientDashboardForm />} />
-        <Route path="patientDashboard" element={<PatientDashboard />} />
       </>
     )
   );
