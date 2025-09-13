@@ -17,7 +17,7 @@ const PORT = 3000;
 
 const connectDb = async () => {
   try {
-    const MONGOURL = "mongodb://localhost:27017/patientDb";
+    const MONGOURL = process.env.MONGOURL;
     await mongoose.connect(MONGOURL);
     console.log("mongodb connected successfully");
   } catch (error) {
