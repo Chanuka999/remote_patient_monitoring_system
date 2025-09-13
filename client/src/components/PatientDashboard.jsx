@@ -11,6 +11,7 @@ import {
   Legend,
 } from "chart.js";
 import { Link } from "react-router-dom";
+import PatientDashboardForm from "./PatientDashboardForm";
 
 ChartJS.register(
   CategoryScale,
@@ -59,11 +60,18 @@ const HealthDashboard = () => {
         <div>
           <h2 className="text-xl font-bold mb-6">Health Portal</h2>
           <nav className="space-y-4 text-sm">
-            <div>🏠 Dashboard</div>
-            <div>👥 Patients</div>
+            <div>
+              <Link to="/PatientDashboard">🏠 Dashboard</Link>
+            </div>
+            <div>
+              <Link to="/PatientDashboardForm">👥 Patients</Link>
+            </div>
             <div>💬 Messages</div>
             <div>📞 Telehealth</div>
             <div>⚙️ Settings</div>
+            <div>
+              <Link to="/login">➡️Logout</Link>
+            </div>
           </nav>
         </div>
         <div className="mt-6 text-sm ">
