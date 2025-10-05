@@ -134,3 +134,23 @@ This project is licensed under the MIT License.
 ## Author
 
 - [Chanuka999](https://github.com/Chanuka999)
+
+## ML API (FastAPI) — how to run
+
+This project contains a small FastAPI wrapper for the ML models in `ml/` that can be called from the React client.
+
+1. Create a Python virtual environment and install dependencies (Windows PowerShell):
+
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r ml/requirements.txt
+```
+
+2. Run the ML API from the project root:
+
+```powershell
+python -m ml.app
+```
+
+The API listens on http://localhost:8000 by default. The React form in `client/src/components/PatientDashboardForm.jsx` posts to `http://localhost:8000/predict`.
+
+If the pickle files `h.pickle` or `brest_cancer.pickle` are missing from `ml/`, prediction endpoints will return an error explaining that the model isn't available.
