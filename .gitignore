@@ -1,0 +1,50 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+
+# Vite / frontend
+client/dist/
+client/.vite/
+client/.cache/
+
+# Python
+venv/
+.venv/
+ml/.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# ML artifacts
+ml/*.pickle
+ml/*.pkl
+ml/*.joblib
+
+# Environment files
+.env
+server/.env
+client/.env
+ml/.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+logs
+*.log
+
+# GitHub Pages (common generated folders)
+docs/
+docs/_site/
+docs/.vuepress/dist/
