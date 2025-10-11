@@ -64,9 +64,11 @@ const HealthDashboard = () => {
               <Link to="/PatientDashboard">🏠 Dashboard</Link>
             </div>
             <div>
-              <Link to="/PatientDashboardForm">👥 Patients</Link>
+              <Link to="/Sympthoms">👥 Sympthoms</Link>
             </div>
-            <div>💬 Messages</div>
+            <div>
+              <Link to="/chat">💬 Messages</Link>
+            </div>
             <div>📞 Telehealth</div>
             <div>⚙️ Settings</div>
             <div>
