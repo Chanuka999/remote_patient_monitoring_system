@@ -24,10 +24,20 @@ const Chat = () => {
       body: JSON.stringify({ contents: history }),
     };
     try {
-      const responce = await fetch(
-        import.meta.env.VITE_API_URL,
-        requestOptions
-      );
+      const apiUrl = import.meta.env.VITE_API_URL;
+      if (!apiUrl || apiUrl.includes("generativelanguage.googleapis.com")) {
+        // If there's no API URL configured or it points to an external Google API
+        // that requires a private key, avoid calling it directly from client-side.
+        console.warn(
+          "Chatbot: VITE_API_URL is not configured or points to a third-party API; skipping request from client. Configure a server-side proxy instead."
+        );
+        updateHistory(
+          "Chatbot is not available (server-side API not configured).",
+          true
+        );
+        return;
+      }
+      const responce = await fetch(apiUrl, requestOptions);
       const data = await responce.json();
       if (!responce.ok)
         throw new Error(data.error.message || "something went wrong!");
