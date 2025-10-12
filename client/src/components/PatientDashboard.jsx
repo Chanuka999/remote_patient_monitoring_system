@@ -55,8 +55,8 @@ const HealthDashboard = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="w-64 bg-gray-900 text-white p-6 flex flex-col justify-between">
+    <div className="flex min-h-screen bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white">
+      <div className="w-64 bg-black bg-opacity-30 text-white p-6 flex flex-col justify-between backdrop-blur-sm">
         <div>
           <h2 className="text-xl font-bold mb-6">Health Portal</h2>
           <nav className="space-y-4 text-sm">
@@ -101,7 +101,7 @@ const HealthDashboard = () => {
           <div>
             <Link
               to="/patientDashboardForm"
-              className="bg-gray-600 text-white text-lg font-semibold px-4 py-2 rounded hover:bg-gray-700 inline-block"
+              className="bg-white bg-opacity-20 text-white text-lg font-semibold px-4 py-2 rounded hover:bg-opacity-30 inline-block"
             >
               Patient Input health Data
             </Link>
@@ -127,10 +127,10 @@ const HealthDashboard = () => {
           {metrics.map((metric, index) => (
             <div
               key={index}
-              className="bg-white p-4 rounded-lg shadow flex flex-col"
+              className="bg-white bg-opacity-10 p-4 rounded-lg shadow flex flex-col backdrop-blur-sm"
             >
               <h4 className="text-md font-semibold mb-1">{metric.title}</h4>
-              <p className="text-sm text-gray-600 mb-2">{metric.value}</p>
+              <p className="text-sm text-white/90 mb-2">{metric.value}</p>
               {chartData[index]?.labels ? (
                 <Line data={chartData[index]} />
               ) : (
