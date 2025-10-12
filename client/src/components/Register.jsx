@@ -13,19 +13,20 @@ const Register = () => {
 
   const handdleSubmit = (e) => {
     e.preventDefault();
+    const API_BASE =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
     axios
-      .post("http://localhost:3000/register", {
-        name,
-        email,
-        password,
-        role,
-        number,
-      })
+      .post(`${API_BASE}/register`, { name, email, password, role, number })
       .then((result) => {
-        console.log(result), navigate("/login");
+        console.log("register success", result.data);
+        navigate("/login");
       })
       .catch((error) => {
-        console.log(error);
+        console.error(
+          "register error",
+          error?.response?.data || error.message || error
+        );
+        alert(error?.response?.data?.message || "Registration failed");
       });
   };
   return (
