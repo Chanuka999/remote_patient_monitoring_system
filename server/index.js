@@ -7,6 +7,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 // Use the global fetch available in Node 18+. If you need node-fetch, install it in server/ with `npm install node-fetch`.
 import net from "net";
+import Measurement from "./model/Measurement.js";
+import Hypertention from "./model/hypertention.js";
 
 const app = express();
 app.use(express.json());
@@ -39,66 +41,29 @@ function mlWarn(message) {
 
 const connectDb = async () => {
   try {
-    const MONGOURL = process.env.MONGOURL;
-    if (MONGOURL) {
-      await mongoose.connect(MONGOURL);
-      console.log("mongodb connected successfully");
-    } else {
-      console.log("MONGOURL not set; skipping DB connection (dev)");
+    let MONGOURL = process.env.MONGOURL;
+    if (!MONGOURL) {
+      // attempt a sensible local fallback
+      MONGOURL = "mongodb://127.0.0.1:27017/rpms_dev";
+      console.log("MONGOURL not set; attempting local fallback:", MONGOURL);
     }
+    await mongoose.connect(MONGOURL, { serverSelectionTimeoutMS: 5000 });
+    console.log("mongodb connected successfully");
   } catch (error) {
-    console.log("mongodb failed", error);
+    console.error(
+      "mongodb failed to connect",
+      error && error.message ? error.message : error
+    );
   }
 };
 
-app.post("/register", async (req, res) => {
-  const { name, email, password, role, number } = req.body;
+// Endpoint to inspect DB connection state (0 = disconnected, 1 = connected)
+app.get("/api/dbstatus", (req, res) => {
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      number,
-    });
-    await newUser.save();
-    res.status(200).json({ success: true, data: newUser });
-  } catch (error) {
-    console.error("Registration error:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "server error", error: error.message });
-  }
-});
-
-app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (isMatch) {
-      const token = jwt.sign(
-        { id: user._id, role: user.role, email: user.email },
-        "your_jwt_secret",
-        { expiresIn: "1d" }
-      );
-      res.status(200).json({
-        success: true,
-        message: "success",
-        token,
-        user: { role: user.role, email: user.email, name: user.name },
-      });
-    } else {
-      res.status(401).json({ success: false, message: "password incorrect" });
-    }
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ success: false, message: "server error" });
+    const state = mongoose.connection.readyState;
+    res.json({ ok: true, state });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
   }
 });
 
@@ -420,7 +385,265 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  connectDb();
-  console.log(`server is starting on ${PORT}`);
+// Authentication endpoints (register / login)
+// These endpoints will attempt a DB reconnect if the connection isn't ready yet.
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
+if (!process.env.JWT_SECRET) {
+  console.warn(
+    "JWT_SECRET not set; using development fallback secret. Set JWT_SECRET in production."
+  );
+}
+
+app.post("/register", async (req, res) => {
+  try {
+    const body = req.body || {};
+    console.log("/register body:", body);
+    const { name, email, password, role, number } = body;
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "name, email and password are required",
+      });
+    }
+
+    // If DB is not connected, try one reconnect attempt to help dev environments
+    if (mongoose.connection.readyState !== 1) {
+      console.log(
+        "DB not connected when registering - attempting to connect..."
+      );
+      console.log(
+        "readyState before connect attempt:",
+        mongoose.connection.readyState
+      );
+      await connectDb();
+      console.log(
+        "readyState after connect attempt:",
+        mongoose.connection.readyState
+      );
+      if (mongoose.connection.readyState !== 1) {
+        return res
+          .status(503)
+          .json({ success: false, message: "Database not connected" });
+      }
+    }
+
+    const existing = await User.findOne({ email: String(email).toLowerCase() });
+    if (existing) {
+      return res
+        .status(409)
+        .json({ success: false, message: "Email already registered" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+
+    const user = new User({
+      name,
+      email: String(email).toLowerCase(),
+      password: hash,
+      role: role || "patient",
+      number: number || undefined,
+    });
+
+    const savedUser = await user.save();
+    console.log("saved user id:", savedUser._id?.toString());
+
+    // issue JWT
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
+  } catch (err) {
+    console.error("/register error", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "server error", error: String(err) });
+  }
 });
+
+app.post("/login", async (req, res) => {
+  try {
+    const body = req.body || {};
+    console.log("/login body:", body);
+    const { email, password } = body;
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "email and password are required" });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      console.log(
+        "DB not connected when logging in - attempting to connect..."
+      );
+      console.log(
+        "readyState before connect attempt:",
+        mongoose.connection.readyState
+      );
+      await connectDb();
+      console.log(
+        "readyState after connect attempt:",
+        mongoose.connection.readyState
+      );
+      if (mongoose.connection.readyState !== 1) {
+        return res
+          .status(503)
+          .json({ success: false, message: "Database not connected" });
+      }
+    }
+
+    const user = await User.findOne({ email: String(email).toLowerCase() });
+    if (!user)
+      return res
+        .status(401)
+        .json({ success: false, message: "invalid credentials" });
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok)
+      return res
+        .status(401)
+        .json({ success: false, message: "invalid credentials" });
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
+  } catch (err) {
+    console.error("/login error", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "server error", error: String(err) });
+  }
+});
+
+// Save measurement to DB
+app.post("/api/measurements", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const required = [
+      "systolic",
+      "diastolic",
+      "heartRate",
+      "glucoseLevel",
+      "temperature",
+      "oxygenSaturation",
+    ];
+    for (const k of required) {
+      if (body[k] === undefined || body[k] === null) {
+        return res
+          .status(400)
+          .json({ success: false, message: `${k} is required` });
+      }
+    }
+    if (mongoose.connection.readyState !== 1) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Database not connected" });
+    }
+
+    const m = new Measurement({
+      systolic: Number(body.systolic),
+      diastolic: Number(body.diastolic),
+      heartRate: Number(body.heartRate),
+      glucoseLevel: Number(body.glucoseLevel),
+      temperature: Number(body.temperature),
+      oxygenSaturation: Number(body.oxygenSaturation),
+      patientId: body.patientId || undefined,
+    });
+    await m.save();
+    return res
+      .status(201)
+      .json({ success: true, data: { id: m._id, createdAt: m.createdAt } });
+  } catch (err) {
+    console.error("/api/measurements error", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "server error", error: String(err) });
+  }
+});
+
+// Save hypertension-specific measurement
+app.post("/api/hypertension", async (req, res) => {
+  try {
+    const body = req.body || {};
+    // Accept payloads that may not include systolic/diastolic/heartRate
+    // (clients may omit vitals). We'll coerce missing numeric values to 0.
+    if (mongoose.connection.readyState !== 1) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Database not connected" });
+    }
+
+  console.log("/api/hypertension body:", body);
+  const h = new Hypertention({
+      systolic: Number(body.systolic) || 0,
+      diastolic: Number(body.diastolic) || 0,
+      heartRate: Number(body.heartRate) || 0,
+      glucoseLevel: Number(body.glucoseLevel) || 0,
+      temperature: Number(body.temperature) || 0,
+      oxygenSaturation: Number(body.oxygenSaturation) || 0,
+      age: body.age || undefined,
+      saltIntake: body.saltIntake || undefined,
+      stressScore: body.stressScore || undefined,
+      bpHistory: body.bpHistory || undefined,
+      sleepDuration: body.sleepDuration || undefined,
+      bmi: body.bmi || undefined,
+      medication: body.medication || undefined,
+      familyHistory: body.familyHistory || undefined,
+      exerciseLevel: body.exerciseLevel || undefined,
+      smokingStatus: body.smokingStatus || undefined,
+      patientId: body.patientId || undefined,
+    });
+    const saved = await h.save();
+    console.log("saved hypertention id:", saved._id?.toString());
+    return res
+      .status(201)
+      .json({ success: true, data: { id: saved._id, createdAt: saved.createdAt } });
+  } catch (err) {
+    console.error("/api/hypertension error", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "server error", error: String(err) });
+  }
+});
+
+// Startup: attempt DB connect first, then start listening
+(async () => {
+  await connectDb();
+  app.listen(PORT, () => {
+    console.log(`server is starting on ${PORT}`);
+    if (mongoose.connection.readyState !== 1) {
+      console.warn(
+        "Server started but DB is not connected. Registrations will fail until DB is available."
+      );
+    }
+  });
+})();
