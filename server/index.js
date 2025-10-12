@@ -602,8 +602,8 @@ app.post("/api/hypertension", async (req, res) => {
         .json({ success: false, message: "Database not connected" });
     }
 
-  console.log("/api/hypertension body:", body);
-  const h = new Hypertention({
+    console.log("/api/hypertension body:", body);
+    const h = new Hypertention({
       systolic: Number(body.systolic) || 0,
       diastolic: Number(body.diastolic) || 0,
       heartRate: Number(body.heartRate) || 0,
@@ -626,7 +626,10 @@ app.post("/api/hypertension", async (req, res) => {
     console.log("saved hypertention id:", saved._id?.toString());
     return res
       .status(201)
-      .json({ success: true, data: { id: saved._id, createdAt: saved.createdAt } });
+      .json({
+        success: true,
+        data: { id: saved._id, createdAt: saved.createdAt },
+      });
   } catch (err) {
     console.error("/api/hypertension error", err);
     return res
