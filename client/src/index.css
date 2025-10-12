@@ -11,7 +11,7 @@ body,
 }
 body {
   font-family: "Outfit", sans-serif;
-  color: white;
+  color: rgb(92, 73, 73);
   background-color: #09090b;
 }
 
@@ -141,4 +141,52 @@ body {
 
 .no-scrollbar {
   scrollbar-width: none;
+}
+
+/* Form animations and helpers */
+@keyframes slideUpFade {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.form-animate {
+  animation: slideUpFade 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+  transition: box-shadow 150ms ease, border-color 150ms ease,
+    transform 80ms ease;
+}
+
+.form-card input:focus,
+.form-card textarea:focus,
+.form-card select:focus {
+  outline: none;
+  border-color: #0ea5e9; /* sky-500 */
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.07),
+    0 0 0 4px rgba(14, 165, 233, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Small helper to enable a CSS-driven responsive two-column layout when desired */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.two-col .full-span {
+  grid-column: 1 / -1;
 }
