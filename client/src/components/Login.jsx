@@ -9,29 +9,37 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handdleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+    const API_BASE =
+      import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
     try {
-      const responce = await axios.post("http://localhost:3000/login", {
+      const response = await axios.post(`${API_BASE}/login`, {
         email,
         password,
       });
-      const { token, user } = responce.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+
+      // server may return { success, data, token } where data is the user
+      const { token, data } = response.data || {};
+      const user = data || response.data?.user || null;
+      if (token) localStorage.setItem("token", token);
+      if (user) localStorage.setItem("user", JSON.stringify(user));
       setError("");
 
-      if (user.role === "patient") {
+      if (user?.role === "patient") {
         navigate("/patientDashboard");
-      } else if (user.role === "doctor") {
+      } else if (user?.role === "doctor") {
         navigate("/doctorDashboard");
-      } else if (user.role === "admin") {
-        navigate("/admimDashboard");
+      } else if (user?.role === "admin") {
+        navigate("/adminDashboard");
       }
     } catch (error) {
+      console.error(
+        "login error",
+        error?.response?.data || error.message || error
+      );
       setError(
-        error.response?.data?.message || "Login failed.please try again."
+        error.response?.data?.message || "Login failed. Please try again."
       );
     }
   };
@@ -39,7 +47,7 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 flex items-center justify-center p-6">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 space-y-6 transform transition-all duration-300 hover:shadow-xl">
-        <form className="space-y-6" onSubmit={handdleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <h2 className="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
             Login Your Account
           </h2>
@@ -89,6 +97,10 @@ const Login = () => {
             </button>
           </div>
         </form>
+
+        {error && (
+          <div className="mt-4 text-center text-sm text-red-600">{error}</div>
+        )}
 
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">
