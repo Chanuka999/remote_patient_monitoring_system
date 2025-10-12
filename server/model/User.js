@@ -1,20 +1,21 @@
 import mongoose from "mongoose";
 
-const UserSchema = mongoose.Schema({
+const UserSchema = new mongoose.Schema({
   name: {
-    type: "String",
+    type: String,
     required: true,
   },
   email: {
-    type: "String",
+    type: String,
     required: true,
+    unique: true,
   },
   password: {
-    type: "String",
+    type: String,
     required: true,
   },
   role: {
-    type: "String",
+    type: String,
     enum: ["patient", "doctor", "admin"],
     required: true,
   },
@@ -23,6 +24,7 @@ const UserSchema = mongoose.Schema({
   },
 });
 
-const UserModel = mongoose.model("Users", UserSchema);
+// Use singular 'User' model name (collection will be 'users')
+const UserModel = mongoose.model("User", UserSchema);
 
 export default UserModel;
