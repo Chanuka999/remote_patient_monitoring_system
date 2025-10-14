@@ -18,6 +18,20 @@ dotenv.config();
 
 const PORT = 3000;
 
+// Log whether chat API is configured (do not print keys)
+const _chatApiConfigured = Boolean(
+  process.env.API_CHAT_URL ||
+    process.env.VITE_API_URL ||
+    process.env.API_CHAT_KEY ||
+    process.env.CHAT_API_KEY
+);
+console.log(
+  "chat API configured on server:",
+  _chatApiConfigured
+    ? "yes"
+    : "no (set API_CHAT_URL or API_CHAT_KEY in server env)"
+);
+
 // ML service configuration (env-driven)
 const ML_HOST = process.env.ML_HOST || "127.0.0.1";
 const ML_PORT = Number(process.env.ML_PORT) || 8000;
@@ -385,6 +399,41 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
+// Chat proxy to forward chat requests to the configured external API from the server
+// This keeps API keys and sensitive endpoints on the server and prevents exposing them to the client.
+app.post("/api/chat", async (req, res) => {
+  try {
+    const CHAT_API = process.env.API_CHAT_URL || process.env.VITE_API_URL;
+    if (!CHAT_API)
+      return res.status(400).json({
+        error:
+          "Chat API not configured on server. Set API_CHAT_URL (or VITE_API_URL) and/or API_CHAT_KEY in the server environment. Do not store keys in client/.env.",
+      });
+
+    // Forward the body as-is. Server should be responsible for adding any auth headers.
+    const headers = { "Content-Type": "application/json" };
+    // If an API key is configured as API_CHAT_KEY or CHAT_API_KEY, add it to headers
+    const apiKey = process.env.API_CHAT_KEY || process.env.CHAT_API_KEY;
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+    const r = await fetch(CHAT_API, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(req.body),
+    });
+    const text = await r.text();
+    try {
+      const json = JSON.parse(text);
+      return res.status(r.status).json(json);
+    } catch (e) {
+      return res.status(r.status).send(text);
+    }
+  } catch (err) {
+    console.error("/api/chat error", err);
+    return res.status(502).json({ error: String(err) });
+  }
+});
+
 // Authentication endpoints (register / login)
 // These endpoints will attempt a DB reconnect if the connection isn't ready yet.
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
@@ -624,12 +673,10 @@ app.post("/api/hypertension", async (req, res) => {
     });
     const saved = await h.save();
     console.log("saved hypertention id:", saved._id?.toString());
-    return res
-      .status(201)
-      .json({
-        success: true,
-        data: { id: saved._id, createdAt: saved.createdAt },
-      });
+    return res.status(201).json({
+      success: true,
+      data: { id: saved._id, createdAt: saved.createdAt },
+    });
   } catch (err) {
     console.error("/api/hypertension error", err);
     return res

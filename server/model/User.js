@@ -24,7 +24,6 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
-// Use singular 'User' model name (collection will be 'users')
 const UserModel = mongoose.model("User", UserSchema);
 
 export default UserModel;

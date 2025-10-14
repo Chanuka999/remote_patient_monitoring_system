@@ -75,6 +75,23 @@ remote_patient_monitoring_system/
      PORT=5000
      ```
 
+   ### Chatbot / API key security
+
+   If you plan to use a third-party chat/LLM provider, do NOT put secret API keys in `client/.env` (they become public). Instead:
+
+   1. Create `server/.env` (do not commit this file) and add your chat API configuration, for example:
+
+   ```env
+   API_CHAT_URL=https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=YOUR_KEY
+   # or separate key
+   API_CHAT_URL=https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent
+   API_CHAT_KEY=YOUR_SECRET_KEY
+   ```
+
+   2. Restart the backend. The frontend will call the server proxy endpoint `/api/chat`, which forwards requests to the configured API without exposing secrets to the browser.
+
+   3. Remove any keys from `client/.env` and rotate keys if they were previously leaked.
+
 5. **Start the backend server:**
 
    ```sh
