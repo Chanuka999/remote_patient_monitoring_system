@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import User from "./model/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-// Use the global fetch available in Node 18+. If you need node-fetch, install it in server/ with `npm install node-fetch`.
+
 import net from "net";
 import Measurement from "./model/Measurement.js";
 import Hypertention from "./model/hypertention.js";
@@ -18,7 +18,6 @@ dotenv.config();
 
 const PORT = 3000;
 
-// Log whether chat API is configured (do not print keys)
 const _chatApiConfigured = Boolean(
   process.env.API_CHAT_URL ||
     process.env.VITE_API_URL ||
@@ -32,12 +31,11 @@ console.log(
     : "no (set API_CHAT_URL or API_CHAT_KEY in server env)"
 );
 
-// ML service configuration (env-driven)
 const ML_HOST = process.env.ML_HOST || "127.0.0.1";
 const ML_PORT = Number(process.env.ML_PORT) || 8000;
-// If set to 'false' (string) fallback behavior will be disabled and the proxy will return 502 when ML is unreachable
+
 const ML_ALLOW_FALLBACK = process.env.ML_ALLOW_FALLBACK !== "false";
-// Rate-limit ML unreachable warnings to avoid spamming logs (ms)
+
 const ML_WARN_COOLDOWN_MS = Number(process.env.ML_WARN_COOLDOWN_MS) || 60_000;
 let _lastMlWarn = 0;
 function mlWarn(message) {
@@ -48,7 +46,6 @@ function mlWarn(message) {
       _lastMlWarn = now;
     }
   } catch (e) {
-    // best-effort; don't throw from logger
     console.warn(message);
   }
 }
@@ -57,7 +54,6 @@ const connectDb = async () => {
   try {
     let MONGOURL = process.env.MONGOURL;
     if (!MONGOURL) {
-      // attempt a sensible local fallback
       MONGOURL = "mongodb://127.0.0.1:27017/rpms_dev";
       console.log("MONGOURL not set; attempting local fallback:", MONGOURL);
     }
@@ -71,7 +67,6 @@ const connectDb = async () => {
   }
 };
 
-// Endpoint to inspect DB connection state (0 = disconnected, 1 = connected)
 app.get("/api/dbstatus", (req, res) => {
   try {
     const state = mongoose.connection.readyState;
@@ -81,13 +76,10 @@ app.get("/api/dbstatus", (req, res) => {
   }
 });
 
-// Proxy endpoint to forward ML requests to the Python FastAPI service.
-// Improved error handling and logging so client gets helpful diagnostics.
 app.post("/api/predict", async (req, res) => {
   try {
     console.log("/api/predict received body:", req.body);
 
-    // Quick port check to avoid calling fetch if ML service is down
     const isPortOpen = (host, port, timeout = 500) => {
       return new Promise((resolve) => {
         const socket = new net.Socket();
@@ -129,7 +121,7 @@ app.post("/api/predict", async (req, res) => {
           mlPort: ML_PORT,
         });
       }
-      // Provide fallback immediately (same logic as in catch)
+
       const body = req.body || {};
       let features = null;
       if (Array.isArray(body.input) && body.input.length > 0) {
@@ -191,7 +183,7 @@ app.post("/api/predict", async (req, res) => {
     return res.status(200).json({ fromMLStatus: mlRes.status, body: data });
   } catch (error) {
     console.error("ML proxy error:", error);
-    // Fallback: try to provide a safe mock prediction so the frontend remains usable.
+
     try {
       const body = req.body || {};
       let features = null;
@@ -208,7 +200,6 @@ app.post("/api/predict", async (req, res) => {
         ];
       }
 
-      // simple heuristic fallback for heart prediction
       let prediction = 0;
       if (features && features.length >= 3) {
         const systolic = Number(features[0]) || 0;
@@ -237,11 +228,10 @@ app.post("/api/predict", async (req, res) => {
   }
 });
 
-// Proxy for the form-based heart prediction endpoint
 app.post("/api/predict/heart_from_form", async (req, res) => {
   try {
     console.log("/api/predict/heart_from_form received body:", req.body);
-    // avoid fetch errors if python is down
+
     const isPortOpen = (host, port, timeout = 500) => {
       return new Promise((resolve) => {
         const socket = new net.Socket();
@@ -341,7 +331,7 @@ app.post("/api/predict/heart_from_form", async (req, res) => {
     return res.status(200).json({ fromMLStatus: mlRes.status, body: data });
   } catch (err) {
     console.error("/api/predict/heart_from_form error", err);
-    // Fallback similar to above
+
     try {
       const b = req.body || {};
       const features = [
@@ -381,7 +371,6 @@ app.post("/api/predict/heart_from_form", async (req, res) => {
   }
 });
 
-// Health endpoint to check Python ML service connectivity
 app.get("/api/health", async (req, res) => {
   try {
     const mlRes = await fetch(`http://${ML_HOST}:${ML_PORT}/`);
@@ -399,8 +388,6 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
-// Chat proxy to forward chat requests to the configured external API from the server
-// This keeps API keys and sensitive endpoints on the server and prevents exposing them to the client.
 app.post("/api/chat", async (req, res) => {
   try {
     const CHAT_API = process.env.API_CHAT_URL || process.env.VITE_API_URL;

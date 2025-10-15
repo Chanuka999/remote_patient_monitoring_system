@@ -7,7 +7,7 @@ import os
 
 app = FastAPI()
 
-# Allow CORS from any origin for development (restrict in production)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,15 +17,13 @@ app.add_middleware(
 )
 
 
-# Try to load models from the same directory as this file
+
 BASE_DIR = os.path.dirname(__file__)
 HEART_MODEL_PATH = os.path.join(BASE_DIR, "h.pickle")
 CANCER_MODEL_PATH = os.path.join(BASE_DIR, "brest_cancer.pickle")
 HYPERTENTION_MODEL_PATH = os.path.join(BASE_DIR, "hypertention.joblib")
 
-# --- Normalization parameters for the heart model (z-score) ---
-# Replace these placeholder values with the real mean/std used at training time.
-# Order must match the features array built below.
+
 HEART_MEAN = [120.0, 80.0, 70.0, 100.0, 36.6, 98.0]
 HEART_STD = [15.0, 10.0, 10.0, 30.0, 0.7, 2.0]
 
@@ -34,7 +32,7 @@ def _safe_load(path):
     try:
         return joblib.load(path)
     except Exception as e:
-        # Keep failing lazy so server still starts; raise on predict if needed
+      
         return None
 
 heart_model = _safe_load(HEART_MODEL_PATH)
@@ -43,7 +41,7 @@ hypertention_model = _safe_load(HYPERTENTION_MODEL_PATH)
 
 
 class PredictRequest(BaseModel):
-    model: str  # 'heart' or 'cancer'
+    model: str 
     input: List[float]
 
 
@@ -57,7 +55,7 @@ class HeartFormRequest(BaseModel):
 
 
 class HypertentionFormRequest(BaseModel):
-    # include commonly collected fields from the frontend hypertention form
+  
     systolic: float
     diastolic: float
     heartRate: float
@@ -140,7 +138,7 @@ def predict_heart_from_form(req: HeartFormRequest):
         req.oxygenSaturation,
     ]
 
-    # Apply z-score normalization using provided MEAN and STD
+   
     try:
         normalized = [
             (f - m) / s if s != 0 else 0.0
@@ -166,7 +164,7 @@ def predict_hypertention_from_form(req: HypertentionFormRequest):
     if hypertention_model is None:
         raise HTTPException(status_code=500, detail="Hypertention model not available on server")
 
-    # Build a feature vector in a reasonable order - adjust as needed for your trained model.
+  
     features = [
         req.systolic,
         req.diastolic,

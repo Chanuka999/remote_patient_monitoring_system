@@ -124,7 +124,6 @@ const HypertentionForm = () => {
         );
       }
 
-      // Build feature vector in same order as ml/app.py's predict_hypertention_from_form
       const features = [
         0,
         0,
@@ -144,7 +143,6 @@ const HypertentionForm = () => {
         Number(payload.smokingStatus) || 0,
       ];
 
-      // Call Node proxy which will forward to Python ML service
       const mlRes = await fetch(`${apiBase}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,7 +150,7 @@ const HypertentionForm = () => {
       });
       const mlData = await mlRes.json().catch(() => null);
       if (!mlRes.ok) throw new Error(JSON.stringify(mlData));
-      // ml proxy wraps response in { fromMLStatus, body }
+
       const body = mlData?.body || mlData;
       setResult({
         success: true,
@@ -232,8 +230,6 @@ const HypertentionForm = () => {
               placeholder="e.g., 39"
             />
           </div>
-
-          {/* glucose, temperature and oxygen fields removed per request */}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
