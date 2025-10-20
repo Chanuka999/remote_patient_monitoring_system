@@ -2,12 +2,12 @@ import React from "react";
 
 function Header() {
   return (
-    <header className="bg-gradient-to-r from-purple-400 via-purple-700 to-purple-900 text-white py-16 shadow-lg">
+    <header className=" bg-gray-200 py-16 shadow-lg">
       <div className="container mx-auto px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg">
           About Remote Patient Monitoring System
         </h1>
-        <p className="mt-4 text-lg md:text-xl text-pink-100 max-w-2xl mx-auto">
+        <p className="mt-4 text-lg md:text-xl text-black max-w-2xl mx-auto">
           Empowering Chronic Disease Management with Cutting-Edge Technology
         </p>
       </div>

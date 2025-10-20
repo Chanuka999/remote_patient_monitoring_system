@@ -20,7 +20,7 @@ const Home = () => {
         </video>
       </div>
 
-      <div className="flex justify-center items-center min-h-screen bg-white px-6">
+      <div className="flex justify-center items-center min-h-screen bg-gray-300 px-6">
         <p className="text-center text-2xl md:text-2xl leading-relaxed text-gray-800 max-w-4xl font-light">
           At <span className="font-semibold text-gray-900">HEALTHLINK</span>, we
           empower care teams to work smarter, connect with patients seamlessly,
