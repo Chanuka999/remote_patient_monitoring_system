@@ -38,13 +38,25 @@ const defaultChart = {
 };
 
 const HealthDashboard = () => {
-  const [chartData, setChartData] = useState([
+  const [chartData, _setChartData] = useState([
     defaultChart,
     defaultChart,
     defaultChart,
     defaultChart,
     defaultChart,
   ]);
+
+  // Read logged-in user from localStorage (set by Login.jsx)
+  let storedUser = null;
+  try {
+    const raw = localStorage.getItem("user");
+    storedUser = raw ? JSON.parse(raw) : null;
+  } catch {
+    storedUser = null;
+  }
+
+  const userName = storedUser?.name || storedUser?.email || "Guest";
+  const userEmail = storedUser?.email || "";
 
   const metrics = [
     { title: "Blood Pressure", value: "120/80 mmHg" },
@@ -55,7 +67,7 @@ const HealthDashboard = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white">
+    <div className="flex min-h-screen bg-gradient-to-br text-gray">
       <div className="w-64 bg-black bg-opacity-30 text-white p-6 flex flex-col justify-between backdrop-blur-sm">
         <div>
           <h2 className="text-xl font-bold mb-6">Health Portal</h2>
@@ -82,8 +94,8 @@ const HealthDashboard = () => {
             alt="Patient"
             className="w-16 h-16 rounded-full mx-auto mb-2"
           />
-          <h4 className="text-center font-semibold">Chanuka randitha</h4>
-          <p className="text-center">chanukaranditha99@gmail.com</p>
+          <h4 className="text-center font-semibold">{userName}</h4>
+          <p className="text-center">{userEmail}</p>
           <div className="mt-2">
             <p>🩺 High Blood Pressure</p>
             <p>😴 Sleep Apnea</p>
@@ -118,7 +130,7 @@ const HealthDashboard = () => {
               alt="Doctor"
               className="w-10 h-10 rounded-full"
             />
-            <span>chanuka randitha</span>
+            <span className="font-medium">{userName}</span>
           </div>
         </div>
 
