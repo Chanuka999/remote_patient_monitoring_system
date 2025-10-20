@@ -26,7 +26,6 @@ function Section({
   return (
     <section className="py-16 px-6 bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <div className="container mx-auto flex flex-col md:flex-row items-center gap-10 p-6 rounded-2xl shadow-lg bg-white bg-opacity-90 backdrop-blur-md border border-gray-200 hover:shadow-2xl transition-shadow duration-500">
-        {/* Show Video if videoUrl exists */}
         {videoUrl ? (
           <div className="md:w-1/2 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-500">
             <video
@@ -147,14 +146,11 @@ const About = () => {
           videoPoster="https://images.unsplash.com/photo-1576091160399-1123a8340d3f?auto=format&fit=crop&w=800&q=80"
         >
           <p>
-            At{" "}
-            <span className="font-semibold text-blue-600">
-              [Your Company Name]
-            </span>
-            , we are dedicated to transforming chronic disease management
-            through innovative remote patient monitoring (RPM) solutions. Our
-            mission is to empower patients, enhance healthcare delivery, and
-            improve outcomes for individuals living with chronic conditions like
+            <span className="font-semibold text-blue-600"></span>, we are
+            dedicated to transforming chronic disease management through
+            innovative remote patient monitoring (RPM) solutions. Our mission is
+            to empower patients, enhance healthcare delivery, and improve
+            outcomes for individuals living with chronic conditions like
             diabetes, hypertension, heart failure, and COPD.
           </p>
         </Section>
