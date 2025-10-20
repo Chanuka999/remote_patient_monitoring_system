@@ -45,73 +45,92 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 space-y-6 transform transition-all duration-300 hover:shadow-xl">
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <h2 className="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-            Login Your Account
-          </h2>
+    <div className="w-full h-screen bg-[url('loginBg.png')] bg-cover bg-center flex font-sans">
+      <div className="w-[50%] h-full bg-gradient-to-br flex flex-col justify-center items-center relative overflow-hidden">
+        <img
+          src="/logo.png"
+          alt="RPM Logo"
+          className="w-48 h-auto mb-6 animate-pulse opacity-90"
+        />
+        <h1 className="text-4xl font-bold text-white tracking-tight">
+          Remote patient monitoring system
+        </h1>
+        <p className="text-lg text-amber-100 mt-4 max-w-md text-center">
+          The digital pathway platform for healthcare providers that turns
+          repetitive clinical tasks into intelligent, scalable workflows, proven
+          to boost productivity, capacity, and patient flow.
+        </p>
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="w-64 h-64 bg-[var(--color-accent)]/30 rounded-full absolute -top-32 -left-32"></div>
+          <div className="w-80 h-80 bg-[var(--color-primary)]/30 rounded-full absolute bottom-0 right-0"></div>
+        </div>
+      </div>
+      <div className="w-[50%] h-full flex justify-center items-center">
+        <div className="w-[500px] p-8 backdrop-blur-xl bg-white/30 shadow-2xl rounded-2xl flex flex-col justify-center items-center gap-6 border border-[var(--color-primary)]/50">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <h2 className="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+              Login Your Account
+            </h2>
 
-          <div className="flex flex-col space-y-2">
-            <label
-              htmlFor="email"
-              className="text-sm font-medium text-indigo-700"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              name="email"
-              className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
-              placeholder="Enter your email"
-              required
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div className="flex flex-col space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-white">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
+                placeholder="Enter your email"
+                required
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-white"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
+                placeholder="Enter your password"
+                required
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200 transform hover:scale-105"
+              >
+                Login
+              </button>
+            </div>
+          </form>
+
+          {error && (
+            <div className="mt-4 text-center text-sm text-red-600">{error}</div>
+          )}
+
+          <div className="mt-4 text-center">
+            <p className="text-sm text-white">
+              Don't have an account?{" "}
+              <Link
+                to="/register"
+                className="text-black font-medium transition duration-200 underline"
+              >
+                Register
+              </Link>
+            </p>
           </div>
-
-          <div className="flex flex-col space-y-2">
-            <label
-              htmlFor="password"
-              className="text-sm font-medium text-indigo-700"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              name="password"
-              className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
-              placeholder="Enter your password"
-              required
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200 transform hover:scale-105"
-            >
-              Login
-            </button>
-          </div>
-        </form>
-
-        {error && (
-          <div className="mt-4 text-center text-sm text-red-600">{error}</div>
-        )}
-
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="text-purple-600 font-medium hover:text-purple-800 transition duration-200 underline"
-            >
-              Register
-            </Link>
-          </p>
         </div>
       </div>
     </div>
