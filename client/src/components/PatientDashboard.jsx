@@ -68,7 +68,7 @@ const HealthDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br text-gray">
-      <div className="w-64 bg-black bg-opacity-30 text-white p-6 flex flex-col justify-between backdrop-blur-sm">
+      <div className="w-64 bg-gray-400 bg-opacity-30 text-black p-6 flex flex-col  items-center backdrop-blur-sm ">
         <div>
           <h2 className="text-xl font-bold mb-6">Health Portal</h2>
           <nav className="space-y-4 text-sm">
@@ -87,20 +87,6 @@ const HealthDashboard = () => {
               <Link to="/login">➡️Logout</Link>
             </div>
           </nav>
-        </div>
-        <div className="mt-6 text-sm ">
-          <img
-            src="https://images.unsplash.com/photo-1639149888905-fb39731f2e6c?w=500"
-            alt="Patient"
-            className="w-16 h-16 rounded-full mx-auto mb-2"
-          />
-          <h4 className="text-center font-semibold">{userName}</h4>
-          <p className="text-center">{userEmail}</p>
-          <div className="mt-2">
-            <p>🩺 High Blood Pressure</p>
-            <p>😴 Sleep Apnea</p>
-            <p>🚬 Smoking</p>
-          </div>
         </div>
       </div>
 

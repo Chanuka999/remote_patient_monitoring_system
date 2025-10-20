@@ -122,7 +122,7 @@ const PatientDashboardForm = () => {
     ].every((k) => form[k] !== "");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-teal-100 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-[url('SyyLogo.png')] flex items-center justify-center py-12 px-4">
       <style>{`
         @keyframes fadeInUp {
           from {
@@ -168,7 +168,7 @@ const PatientDashboardForm = () => {
           grid-column: 1 / -1;
         }
       `}</style>
-      <div className="bg-white text-gray-900 rounded-2xl shadow-2xl p-8 max-w-2xl w-full animate-form-card">
+      <div className=" text-gray-900 backdrop-blur-2xl rounded-2xl shadow-2xl p-8 max-w-2xl w-full animate-form-card">
         <h2 className="text-3xl font-bold text-center text-blue-600 mb-8 animate-pulse">
           🩺 Patient Health Data Input
         </h2>

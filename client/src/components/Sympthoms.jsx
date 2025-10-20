@@ -14,17 +14,17 @@ const Sympthoms = () => {
       <div className="max-w-5xl mx-auto">
         <header className="mb-6">
           <h1 className="text-3xl font-extrabold text-gray-900">Symptoms</h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-white">
             Browse common health conditions and view details for each.
           </p>
         </header>
 
-        <main className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <main className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
           {AVAILABLE.map((s) => (
             <Link
               to={`/Sympthoms/${s.id}`}
               key={s.id}
-              className="flex items-center p-5 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-150 border border-gray-100"
+              className="flex items-center p-5 backdrop-blur-2xl rounded-lg shadow-sm hover:shadow-md transition-shadow duration-150 border border-gray-100"
             >
               <div className="flex-shrink-0 mr-4">
                 {/* simple icon */}
@@ -56,7 +56,7 @@ const Sympthoms = () => {
                 <h3 className="text-lg font-semibold text-gray-900">
                   {s.label}
                 </h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-white">
                   Tap to view causes, symptoms, and simple self-care tips.
                 </p>
               </div>
