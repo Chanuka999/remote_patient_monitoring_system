@@ -10,7 +10,7 @@ const AVAILABLE = [
 
 const Sympthoms = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 p-6">
+    <div className="min-h-screen bg-[url('Slogo.jpg')] bg-cover from-white to-gray-50 p-6">
       <div className="max-w-5xl mx-auto">
         <header className="mb-6">
           <h1 className="text-3xl font-extrabold text-gray-900">Symptoms</h1>
