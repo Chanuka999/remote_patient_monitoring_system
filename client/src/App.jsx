@@ -5,7 +5,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import Home from "./components/Home";
-import RootLayout from "./Layout/Rootlayout";
+import RootLayout from "./Layout/RootLayout";
 import Feature from "./components/Feature";
 import About from "./components/About";
 import "./App.css";
@@ -23,7 +23,7 @@ import Diabetics from "./components/Sympthoms/DiabeticsForm";
 import Asthma from "./components/Sympthoms/Asethma";
 import HypertensionForm from "./components/Sympthoms/HypertentionForm";
 import Chat from "./Chat";
-
+import Contact from "./pages/Contact";
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
@@ -33,8 +33,6 @@ function App() {
           <Route path="about" element={<About />} />
           <Route path="feature" element={<Feature />} />
 
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
           <Route
             path="patientDashboardForm"
             element={<PatientDashboardForm />}
@@ -49,7 +47,11 @@ function App() {
           <Route path="asthma" element={<Asthma />} />
           <Route path="hypertension" element={<HypertensionForm />} />
           <Route path="chat" element={<Chat />} />
+          <Route path="contact" element={<Contact />} />
         </Route>
+
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
       </>
     )
   );
