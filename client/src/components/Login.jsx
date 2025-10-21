@@ -23,7 +23,17 @@ const Login = () => {
       const { token, data } = response.data || {};
       const user = data || response.data?.user || null;
       if (token) localStorage.setItem("token", token);
-      if (user) localStorage.setItem("user", JSON.stringify(user));
+      if (user) {
+        // ensure symptoms are preserved
+        const toSave = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          symptoms: user.symptoms || [],
+        };
+        localStorage.setItem("user", JSON.stringify(toSave));
+      }
       setError("");
 
       if (user?.role === "patient") {

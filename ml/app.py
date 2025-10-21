@@ -22,6 +22,7 @@ BASE_DIR = os.path.dirname(__file__)
 HEART_MODEL_PATH = os.path.join(BASE_DIR, "h.pickle")
 CANCER_MODEL_PATH = os.path.join(BASE_DIR, "brest_cancer.pickle")
 HYPERTENTION_MODEL_PATH = os.path.join(BASE_DIR, "hypertention.joblib")
+DIABETES_MODEL_PATH = os.path.join(BASE_DIR, "diabets.joblib")
 
 
 HEART_MEAN = [120.0, 80.0, 70.0, 100.0, 36.6, 98.0]
@@ -38,6 +39,7 @@ def _safe_load(path):
 heart_model = _safe_load(HEART_MODEL_PATH)
 cancer_model = _safe_load(CANCER_MODEL_PATH)
 hypertention_model = _safe_load(HYPERTENTION_MODEL_PATH)
+diabetes_model = _safe_load(DIABETES_MODEL_PATH)
 
 
 class PredictRequest(BaseModel):
@@ -76,7 +78,15 @@ class HypertentionFormRequest(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "models": {"heart": bool(heart_model), "cancer": bool(cancer_model)}}
+    return {
+        "status": "ok",
+        "models": {
+            "heart": bool(heart_model),
+            "cancer": bool(cancer_model),
+            "hypertention": bool(hypertention_model),
+            "diabetes": bool(diabetes_model),
+        },
+    }
 
 
 @app.post("/predict")
@@ -104,6 +114,17 @@ def predict(req: PredictRequest):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Model prediction failed: {e}")
         return {"model": "cancer", "prediction": int(pred[0])}
+
+    elif model_name == "diabetes" or model_name == "diabet":
+        # diabetes model (PIMA) expects 8 features in order:
+        # [Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age]
+        if diabetes_model is None:
+            raise HTTPException(status_code=500, detail="Diabetes model not available on server")
+        try:
+            pred = diabetes_model.predict([features])
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Diabetes model prediction failed: {e}")
+        return {"model": "diabetes", "prediction": int(pred[0])}
 
     else:
         # support hypertention model when requested via the generic /predict endpoint

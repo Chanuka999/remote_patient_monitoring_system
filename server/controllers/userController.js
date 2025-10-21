@@ -87,10 +87,11 @@ export const registerUser = async (req, res) => {
     return res.status(201).json({
       success: true,
       data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id: savedUser._id,
+        name: savedUser.name,
+        email: savedUser.email,
+        role: savedUser.role,
+        symptoms: savedUser.symptoms || [],
       },
       token,
     });
@@ -160,11 +161,96 @@ export const Loginuser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        symptoms: user.symptoms || [],
       },
       token,
     });
   } catch (err) {
     console.error("/login error", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "server error", error: String(err) });
+  }
+};
+
+// Helper to extract token and verify
+const verifyTokenFromReq = (req) => {
+  const auth = req.headers?.authorization || req.headers?.Authorization;
+  if (!auth) return null;
+  const parts = auth.split(" ");
+  if (parts.length < 2) return null;
+  const token = parts[1];
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    return payload;
+  } catch (err) {
+    return null;
+  }
+};
+
+export const getMe = async (req, res) => {
+  try {
+    const payload = verifyTokenFromReq(req);
+    if (!payload || !payload.id)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const user = await User.findById(payload.id).select("-password");
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        number: user.number,
+        symptoms: user.symptoms || [],
+      },
+    });
+  } catch (err) {
+    console.error("/me error", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "server error", error: String(err) });
+  }
+};
+
+export const updateSymptoms = async (req, res) => {
+  try {
+    const payload = verifyTokenFromReq(req);
+    if (!payload || !payload.id)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const body = req.body || {};
+    let { symptoms } = body;
+
+    // Normalize to array of strings
+    let normalized = [];
+    if (Array.isArray(symptoms)) normalized = symptoms.map((s) => String(s));
+    else if (typeof symptoms === "string" && symptoms.length > 0)
+      normalized = symptoms
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    const user = await User.findById(payload.id);
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
+    user.symptoms = normalized;
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ success: true, data: { symptoms: user.symptoms || [] } });
+  } catch (err) {
+    console.error("/me/symptoms error", err);
     return res
       .status(500)
       .json({ success: false, message: "server error", error: String(err) });

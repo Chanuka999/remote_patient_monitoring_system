@@ -47,7 +47,7 @@ const Navbar = () => {
                 Contact
               </NavLink>
               <NavLink
-                to="/blog"
+                to="/hospital"
                 className={({ isActive }) =>
                   `inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors duration-200 ${
                     isActive
@@ -56,7 +56,7 @@ const Navbar = () => {
                   }`
                 }
               >
-                Feature
+                Hospital Care
               </NavLink>
               <NavLink
                 to="/product"

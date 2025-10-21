@@ -12,6 +12,7 @@ import {
 } from "chart.js";
 import { Link } from "react-router-dom";
 import PatientDashboardForm from "./PatientDashboardForm";
+import { useEffect } from "react";
 
 ChartJS.register(
   CategoryScale,
@@ -56,7 +57,8 @@ const HealthDashboard = () => {
   }
 
   const userName = storedUser?.name || storedUser?.email || "Guest";
-  const userEmail = storedUser?.email || "";
+  // email not currently used here but available on storedUser when needed
+  // const userEmail = storedUser?.email || "";
 
   const metrics = [
     { title: "Blood Pressure", value: "120/80 mmHg" },
@@ -65,6 +67,71 @@ const HealthDashboard = () => {
     { title: "RPM Device Usage", value: "40 min" },
     { title: "Respiration Rate", value: "18 bpm" },
   ];
+
+  // Patient symptoms state
+  const [symptoms, setSymptoms] = React.useState([]);
+  const [newSymptom, setNewSymptom] = React.useState("");
+  const [savingSymptoms, setSavingSymptoms] = React.useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE}/me`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) return; // ignore
+        const data = await res.json();
+        if (data?.data?.symptoms) setSymptoms(data.data.symptoms || []);
+      } catch {
+        // ignore
+      }
+    };
+    load();
+  }, []);
+
+  const addSymptom = () => {
+    const s = String(newSymptom || "").trim();
+    if (!s) return;
+    if (symptoms.includes(s)) {
+      setNewSymptom("");
+      return;
+    }
+    setSymptoms((prev) => [...prev, s]);
+    setNewSymptom("");
+  };
+
+  const removeSymptom = (val) => {
+    setSymptoms((prev) => prev.filter((p) => p !== val));
+  };
+
+  const saveSymptoms = async () => {
+    setSavingSymptoms(true);
+    try {
+      const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/me/symptoms`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ symptoms }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      const data = await res.json();
+      // update localStorage user copy
+      const raw = localStorage.getItem("user");
+      const u = raw ? JSON.parse(raw) : {};
+      u.symptoms = data?.data?.symptoms || symptoms;
+      localStorage.setItem("user", JSON.stringify(u));
+    } catch {
+      // ignore for now
+    } finally {
+      setSavingSymptoms(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br text-gray">
@@ -136,6 +203,57 @@ const HealthDashboard = () => {
               )}
             </div>
           ))}
+        </div>
+
+        {/* Symptoms box */}
+        <div className="mt-8 max-w-2xl">
+          <h4 className="text-lg font-semibold mb-2">Your Symptoms</h4>
+          <div className="flex gap-2 mb-2">
+            <input
+              value={newSymptom}
+              onChange={(e) => setNewSymptom(e.target.value)}
+              placeholder="Add symptom e.g. cough"
+              className="px-3 py-2 border rounded flex-1"
+            />
+            <button
+              onClick={addSymptom}
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              Add
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {symptoms.length === 0 && (
+              <p className="text-sm text-gray-500">No symptoms recorded.</p>
+            )}
+            {symptoms.map((s) => (
+              <div
+                key={s}
+                className="flex items-center justify-between p-2 border rounded"
+              >
+                <div>{s}</div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => removeSymptom(s)}
+                    className="text-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3">
+            <button
+              onClick={saveSymptoms}
+              disabled={savingSymptoms}
+              className="px-4 py-2 bg-green-600 text-white rounded"
+            >
+              {savingSymptoms ? "Saving..." : "Save Symptoms"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
