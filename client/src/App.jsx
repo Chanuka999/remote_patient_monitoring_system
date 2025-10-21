@@ -24,6 +24,7 @@ import Asthma from "./components/Sympthoms/Asethma";
 import HypertensionForm from "./components/Sympthoms/HypertentionForm";
 import Chat from "./Chat";
 import Contact from "./pages/Contact";
+import Hospital from "./pages/HospitalCare";
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
@@ -31,7 +32,7 @@ function App() {
         <Route path="/" element={<RootLayout />}>
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
-          <Route path="feature" element={<Feature />} />
+          <Route path="hospital" element={<Hospital />} />
 
           <Route
             path="patientDashboardForm"
