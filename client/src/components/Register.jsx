@@ -13,17 +13,18 @@ const Register = () => {
   const navigate = useNavigate();
 
   const handleSymptomChange = (symptom) => {
-    if (symptoms.includes(symptom)) {
-      setSymptoms(symptoms.filter((s) => s !== symptom));
-    } else {
-      setSymptoms([...symptoms, symptom]);
-    }
+    setSymptoms((prev) =>
+      prev.includes(symptom)
+        ? prev.filter((s) => s !== symptom)
+        : [...prev, symptom]
+    );
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const API_BASE =
       import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+    console.log("Register payload", { name, email, role, number, symptoms });
     axios
       .post(`${API_BASE}/register`, {
         name,
@@ -84,6 +85,7 @@ const Register = () => {
                 className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-indigo-50"
                 placeholder="Enter your name"
                 required
+                value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
@@ -99,6 +101,7 @@ const Register = () => {
                 className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-indigo-50"
                 placeholder="Enter your email"
                 required
+                value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
@@ -117,6 +120,7 @@ const Register = () => {
                 className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-indigo-50"
                 placeholder="Enter your password"
                 required
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
@@ -130,6 +134,7 @@ const Register = () => {
                 id="role"
                 className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-indigo-50"
                 required
+                value={role}
                 onChange={(e) => setRole(e.target.value)}
               >
                 <option value="">Select Role</option>
@@ -138,11 +143,11 @@ const Register = () => {
                 <option value="doctor">Doctor</option>
               </select>
             </div>
-            {/* Symptoms - Visible Only for Patients */}
-            {role === "patient" && (
+            {/* Symptoms - Visible for Patients and Doctors */}
+            {(role === "patient" || role === "doctor") && (
               <div className="space-y-3 border border-purple-200 rounded-lg p-4 bg-purple-50 transition-all duration-300 md:col-span-2">
                 <h3 className="text-lg font-semibold text-purple-700">
-                  Select Your Symptoms
+                  Select Symptoms
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   {["Heart Disease", "Diabetes", "Hypertension", "Asthma"].map(
@@ -156,6 +161,7 @@ const Register = () => {
                           value={symptom}
                           checked={symptoms.includes(symptom)}
                           onChange={() => handleSymptomChange(symptom)}
+                          name="symptoms"
                           className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                         />
                         <span>{symptom}</span>
@@ -180,6 +186,7 @@ const Register = () => {
                 className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-indigo-50"
                 placeholder="Enter your phone number"
                 required
+                value={number}
                 onChange={(e) => setNumber(e.target.value)}
               />
             </div>
