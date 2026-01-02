@@ -117,12 +117,19 @@ const DoctorDashboard = () => {
     const socket = ioClient(API_BASE || undefined);
     socket.on("connect", () => {
       try {
+        console.log(
+          "socket connected (client)",
+          socket.id,
+          "attempt join",
+          doctor.id
+        );
         socket.emit("join", { doctorId: doctor.id });
-      } catch {
-        // ignore
+      } catch (e) {
+        console.error("socket join emit error (client)", e);
       }
     });
     socket.on("alert", (a) => {
+      console.log("socket alert event (client)", a?._id || a?.id || "(no id)");
       try {
         // attempt to fetch populated alert from API for richer data (measurement)
         (async () => {
@@ -139,13 +146,14 @@ const DoctorDashboard = () => {
                 return;
               }
             }
-          } catch {
+          } catch (err) {
+            console.error("Failed to fetch populated alert (client)", err);
             // ignore fetch error and fall back to raw event
           }
           setAlerts((prev) => [a, ...(prev || [])]);
         })();
       } catch {
-        // ignore
+        console.error("socket alert handling error (client)");
       }
     });
 
