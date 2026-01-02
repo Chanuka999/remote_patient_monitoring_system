@@ -1,14 +1,46 @@
 # Remote Patient Monitoring System
 
-A full-stack MERN (MongoDB, Express.js, React, Node.js) application for remote patient monitoring. This project allows patients and doctors to interact, manage appointments, and monitor health data remotely.
+A full-stack MERN (MongoDB, Express.js, React, Node.js) application for remote patient monitoring. This project allows patients and doctors to interact, manage appointments, monitor health data, and automatically alert specialists when high-risk conditions are detected.
 
-## Features
+## ✨ Key Features
 
-- **User Authentication:** Secure login and registration for patients and doctors.
-- **Patient Dashboard:** Patients can view and update their health data, book appointments, and see their appointment history.
-- **Doctor Dashboard:** Doctors can view patient information, manage appointments, and monitor patient health data.
-- **Appointment Management:** Patients can book appointments; doctors can approve or manage them.
-- **Responsive UI:** Modern, responsive interface built with React and Vite.
+### Patient Features
+
+- **User Authentication:** Secure login and registration for patients
+- **Symptom Reporting:** Report symptoms with 12+ common health conditions
+- **Health Measurements:** Track vital signs (BP, HR, glucose, temperature, O2, etc.)
+- **Risk Assessment:** AI-powered instant risk prediction (High/Low)
+- **Patient Dashboard:** View and update health data, book appointments
+- **Appointment Management:** Schedule appointments with doctors
+
+### Doctor Features
+
+- **Real-Time Alerts:** Receive instant notifications when patients report high-risk conditions
+- **Alert Dashboard:** View all high-risk patient alerts without page refresh
+- **Patient Details:** See patient symptoms and health measurements
+- **Measurement Tracking:** Access patient's full measurement history
+- **Alert Management:** Mark alerts as read/unread, take action
+- **Doctor Dashboard:** Monitor assigned patients and appointments
+
+### System Features
+
+- **AI-Powered Predictions:** ML-based risk assessment with rule-based fallback
+- **Real-Time Notifications:** Socket.IO instant alert delivery to doctors
+- **Automatic Alert Routing:** Alerts sent to specialist doctors based on symptoms
+- **Responsive UI:** Modern, responsive interface built with React and Vite
+- **Comprehensive Logging:** Track all patient measurements and predictions
+
+## 📚 Documentation
+
+### Getting Started
+
+- [QUICK_START.md](QUICK_START.md) - Setup and basic usage guide
+
+### Technical Documentation
+
+- [SYMPTOM_ALERT_FLOW.md](SYMPTOM_ALERT_FLOW.md) - Complete feature documentation
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and data flow diagrams
+- [TEST_CASES.md](TEST_CASES.md) - Testing checklist and test scenarios
 
 ## Project Structure
 
@@ -17,22 +49,56 @@ remote_patient_monitoring_system/
 │
 ├── client/                # Frontend React application
 │   ├── src/
-│   │   ├── components/    # React components (Home, Login, Register, Dashboard, etc.)
+│   │   ├── components/    # React components
+│   │   │   ├── SymptomForm.jsx        # NEW: Patient symptom input form
+│   │   │   ├── Sympthoms.jsx          # UPDATED: Symptom browse page
+│   │   │   ├── SymptomDetail.jsx      # UPDATED: Symptom details
+│   │   │   ├── DoctorDashboard.jsx    # ENHANCED: Real-time alerts display
+│   │   │   ├── PatientDashboard.jsx   # Patient dashboard
+│   │   │   ├── Login.jsx
+│   │   │   ├── Register.jsx
+│   │   │   └── ...
 │   │   ├── Layout/        # Layout components
 │   │   ├── assets/        # Images and static assets
-│   │   ├── App.jsx        # Main App component
+│   │   ├── App.jsx        # Main App component (updated routing)
 │   │   └── main.jsx       # Entry point
-│   ├── public/            # Static files
-│   ├── package.json       # Frontend dependencies
-│   └── vite.config.js     # Vite configuration
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.js
 │
 ├── server/                # Backend Node.js/Express application
-│   ├── model/             # Mongoose models (User.js, etc.)
-│   ├── middleware/        # Express middleware
-│   ├── index.js           # Entry point for Express server
-│   └── package.json       # Backend dependencies
+│   ├── controllers/
+│   │   ├── predictController.js      # UPDATED: Added predictFromSymptoms()
+│   │   ├── alertController.js        # Alert management
+│   │   ├── userController.js
+│   │   ├── healthController.js
+│   │   └── ...
+│   ├── models/            # Mongoose schemas
+│   │   ├── Measurement.js
+│   │   ├── Prediction.js
+│   │   ├── Alert.js
+│   │   ├── User.js
+│   │   └── ...
+│   ├── routes/
+│   │   ├── predictRouter.js          # UPDATED: Added /predict/symptoms
+│   │   ├── alertRouter.js
+│   │   └── ...
+│   ├── lib/
+│   │   ├── db.js          # Database connection
+│   │   └── socket.js      # Socket.IO setup
+│   ├── index.js           # Express server entry point
+│   └── package.json
 │
-└── README.md              # Project documentation
+├── ml/                    # Python ML service (optional)
+│   ├── app.py
+│   ├── requirements.txt
+│   └── ...
+│
+├── QUICK_START.md         # Quick setup guide
+├── SYMPTOM_ALERT_FLOW.md  # Feature documentation
+├── ARCHITECTURE.md        # System architecture
+├── TEST_CASES.md          # Test cases and verification
+└── README.md              # This file
 ```
 
 ## Getting Started
