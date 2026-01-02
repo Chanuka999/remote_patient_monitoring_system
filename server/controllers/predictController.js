@@ -11,6 +11,32 @@ import { getIo } from "../lib/socket.js";
 import Measurement from "../model/Measurement.js";
 import Prediction from "../model/Prediction.js";
 
+// Helper to fetch with retries on 429/503 transient responses
+const fetchWithRetry = async (
+  url,
+  options = {},
+  retries = 3,
+  backoffMs = 300
+) => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.status === 429 || res.status === 503) {
+        if (attempt === retries) return res;
+        const wait = backoffMs * Math.pow(2, attempt);
+        await new Promise((r) => setTimeout(r, wait));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      // network error - retry
+      if (attempt === retries) throw err;
+      const wait = backoffMs * Math.pow(2, attempt);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+};
+
 // Helper: derive simple symptom names from feature values when explicit
 // patient symptoms are not provided.
 const deriveSymptomsFromFeatures = (features = []) => {
@@ -56,22 +82,32 @@ const createAlertsForRisk = async ({
         ? reqBody.symptoms
         : deriveSymptomsFromFeatures(features);
 
-    if (!patientSymptoms || patientSymptoms.length === 0) return;
+    // If we couldn't derive any explicit symptoms, still notify doctors
+    // Find doctors with overlapping symptoms when available, otherwise
+    // fallback to notifying all doctors so risk alerts are not dropped.
+    let doctors = [];
+    if (patientSymptoms && patientSymptoms.length > 0) {
+      doctors = await User.find({
+        role: "doctor",
+        symptoms: { $in: patientSymptoms },
+      }).lean();
+    }
 
-    // Find doctors with overlapping symptoms
-    const doctors = await User.find({
-      role: "doctor",
-      symptoms: { $in: patientSymptoms },
-    }).lean();
-    if (!doctors || doctors.length === 0) return;
+    // fallback: notify all doctors (limit to a reasonable number)
+    if (!doctors || doctors.length === 0) {
+      doctors = await User.find({ role: "doctor" }).limit(50).lean();
+      if (!doctors || doctors.length === 0) return;
+    }
 
     const messageParts = [];
     if (patient && patient.name) messageParts.push(`Patient ${patient.name}`);
     else if (patientId) messageParts.push(`Patient ${patientId}`);
     messageParts.push("high-risk detected");
-    const message = `${messageParts.join(
-      " "
-    )} — symptoms: ${patientSymptoms.join(", ")}`;
+    const symptomsText =
+      patientSymptoms && patientSymptoms.length > 0
+        ? ` — symptoms: ${patientSymptoms.join(", ")}`
+        : "";
+    const message = `${messageParts.join(" ")}${symptomsText}`;
 
     // Create an alert document per doctor
     const alerts = doctors.map((d) => ({
@@ -100,9 +136,15 @@ const createAlertsForRisk = async ({
         created.forEach((al) => {
           try {
             const docRoom = String(al.doctorId);
+            console.log(
+              "emitting alert to room",
+              docRoom,
+              "alertId",
+              al._id?.toString()
+            );
             io.to(docRoom).emit("alert", al);
           } catch (e) {
-            // ignore per-alert emit errors
+            console.error("emit alert error", e);
           }
         });
       }
@@ -203,11 +245,16 @@ export const predict = async (req, res) => {
       });
     }
 
-    const mlRes = await fetch(`http://${ML_HOST}:${ML_PORT}/predict`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body),
-    });
+    const mlRes = await fetchWithRetry(
+      `http://${ML_HOST}:${ML_PORT}/predict`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      },
+      3,
+      300
+    );
 
     const text = await mlRes.text();
     let data;
@@ -456,6 +503,15 @@ export const predictHeartFromForm = async (req, res) => {
             predErr
           );
         }
+
+        // Create alerts for doctors if risk detected
+        await createAlertsForRisk({
+          reqBody: b,
+          features,
+          prediction,
+          mlBody: { fallback: true },
+          measurementId: m._id,
+        });
       } catch (persistErr) {
         console.error(
           "failed to save measurement (heart_from_form fallback)",
@@ -474,13 +530,15 @@ export const predictHeartFromForm = async (req, res) => {
       });
     }
 
-    const mlRes = await fetch(
+    const mlRes = await fetchWithRetry(
       `http://${ML_HOST}:${ML_PORT}/predict/heart_from_form`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(req.body),
-      }
+      },
+      3,
+      300
     );
 
     const text = await mlRes.text();
@@ -600,6 +658,138 @@ export const predictHeartFromForm = async (req, res) => {
         error: String(err),
       });
     }
+  }
+};
+
+// New endpoint for symptom-based risk prediction
+export const predictFromSymptoms = async (req, res) => {
+  try {
+    console.log("/api/predict/symptoms received body:", req.body);
+
+    const body = req.body || {};
+    const { patientId, symptoms = [] } = body;
+
+    // Extract measurement features
+    let features = null;
+    if (body.systolic !== undefined) {
+      features = [
+        body.systolic,
+        body.diastolic,
+        body.heartRate,
+        body.glucoseLevel,
+        body.temperature,
+        body.oxygenSaturation,
+      ];
+    }
+
+    // Check ML service availability
+    const mlAlive = await isPortOpen(ML_HOST, ML_PORT);
+    let prediction = 0;
+
+    if (mlAlive) {
+      try {
+        const mlRes = await fetchWithRetry(
+          `http://${ML_HOST}:${ML_PORT}/predict`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+          3,
+          300
+        );
+
+        const text = await mlRes.text();
+        let mlData;
+        if (!text) {
+          mlData = { message: "no content from ML service" };
+        } else {
+          try {
+            mlData = JSON.parse(text);
+          } catch (err) {
+            mlData = { raw: text };
+          }
+        }
+
+        if (mlRes.ok && mlData.body?.prediction !== undefined) {
+          prediction = mlData.body.prediction;
+        }
+      } catch (mlErr) {
+        console.warn("ML service call failed, using fallback", mlErr);
+        // Use fallback prediction logic
+        if (features && features.length >= 3) {
+          const systolic = Number(features[0]) || 0;
+          const heartRate = Number(features[2]) || 0;
+          const spo2 = Number(features[5]) || 100;
+          if (systolic >= 140 || heartRate >= 100 || spo2 < 92) prediction = 1;
+        }
+      }
+    } else {
+      // ML not available, use fallback
+      if (features && features.length >= 3) {
+        const systolic = Number(features[0]) || 0;
+        const heartRate = Number(features[2]) || 0;
+        const spo2 = Number(features[5]) || 100;
+        if (systolic >= 140 || heartRate >= 100 || spo2 < 92) prediction = 1;
+      }
+    }
+
+    // Save measurement
+    try {
+      const m = new Measurement({
+        systolic: Number(features?.[0]) || 0,
+        diastolic: Number(features?.[1]) || 0,
+        heartRate: Number(features?.[2]) || 0,
+        glucoseLevel: Number(features?.[3]) || 0,
+        temperature: Number(features?.[4]) || 0,
+        oxygenSaturation: Number(features?.[5]) || 0,
+        patientId: patientId || undefined,
+      });
+      await m.save();
+
+      // Save prediction record
+      try {
+        const p = new Prediction({
+          patientId: patientId || undefined,
+          measurementId: m._id,
+          model: "symptom_based",
+          prediction: Number(prediction) || 0,
+          features: Array.isArray(features) ? features.map(Number) : [],
+          mlBody: { symptoms, prediction },
+        });
+        await p.save();
+      } catch (predErr) {
+        console.error("failed to save prediction", predErr);
+      }
+
+      // Create alerts if high risk detected
+      if (prediction === 1) {
+        await createAlertsForRisk({
+          reqBody: { ...body, patientId, symptoms },
+          features,
+          prediction,
+          measurementId: m._id,
+        });
+      }
+    } catch (saveErr) {
+      console.error("failed to save measurement", saveErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      body: {
+        model: "symptom_based",
+        prediction: Number(prediction),
+        features: features || [],
+        symptoms: symptoms || [],
+      },
+    });
+  } catch (error) {
+    console.error("Symptom prediction error:", error);
+    return res.status(500).json({
+      success: false,
+      error: String(error),
+    });
   }
 };
 

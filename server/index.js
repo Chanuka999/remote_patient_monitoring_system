@@ -9,6 +9,7 @@ import predictRouter from "./routes/predictRouter.js";
 import measurementRouter from "./routes/measurementRouter.js";
 import hypertensionRouter from "./routes/hypertensionRouter.js";
 import alertRouter from "./routes/alertRouter.js";
+import debugRouter from "./routes/debugRouter.js";
 
 import { connectDb } from "./lib/db.js";
 import { ML_HOST, ML_PORT } from "./lib/utils.js";
@@ -44,6 +45,7 @@ app.use("/api", predictRouter);
 app.use("/api", measurementRouter);
 app.use("/api", hypertensionRouter);
 app.use("/api", alertRouter);
+app.use("/api/debug", debugRouter);
 
 // User routes (register/login) are mounted at root in current client expectations
 app.use("/", userRouter);
@@ -62,12 +64,21 @@ const start = async () => {
   });
   // basic join handler for doctors to join their room by id
   io.on("connection", (socket) => {
+    console.log("socket connected", socket.id);
     socket.on("join", (data) => {
       try {
         const doctorId = data?.doctorId || data?.id;
-        if (doctorId) socket.join(String(doctorId));
+        if (doctorId) {
+          socket.join(String(doctorId));
+          console.log(
+            "socket join room",
+            String(doctorId),
+            "socket",
+            socket.id
+          );
+        }
       } catch (err) {
-        // ignore
+        console.error("socket join error", err);
       }
     });
   });
