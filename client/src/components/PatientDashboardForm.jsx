@@ -67,6 +67,16 @@ const PatientDashboardForm = () => {
     }
     setLoading(true);
     setResult(null);
+
+    // Get patient ID from localStorage
+    let patientId = null;
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      patientId = user.id || user._id || null;
+    } catch {
+      console.warn("Could not get patient ID from localStorage");
+    }
+
     const body = {
       systolic: parseFloat(form.systolic) || 0,
       diastolic: parseFloat(form.diastolic) || 0,
@@ -74,34 +84,46 @@ const PatientDashboardForm = () => {
       glucoseLevel: parseFloat(form.glucoseLevel) || 0,
       temperature: parseFloat(form.temperature) || 0,
       oxygenSaturation: parseFloat(form.oxygenSaturation) || 0,
+      patientId: patientId, // Include patient ID
     };
 
     try {
       const apiBase = import.meta.env.VITE_BACKEND_URL || "";
-      const saveRes = await fetch(`${apiBase}/api/measurements`, {
+      const bodyWithSymptom = {
+        ...body,
+        symptoms: ["heart_disease"],
+      };
+
+      // Save measurement
+      await fetch(`${apiBase}/api/measurements`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!saveRes.ok) {
-        const saveData = await saveRes.json().catch(() => null);
-        throw new Error(
-          `Failed to save measurement: ${saveData?.message || saveRes.status}`
-        );
-      }
 
-      const res = await fetch("/api/predict/heart_from_form", {
+      // Get prediction and trigger alerts
+      const res = await fetch(`${apiBase}/api/predict/heart_from_form`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(bodyWithSymptom),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(JSON.stringify(data));
+
+      const prediction = data.body?.prediction || 0;
+      const riskStatus = prediction === 1 ? "HIGH RISK ⚠️" : "LOW RISK ✅";
+      const message =
+        prediction === 1
+          ? "⚠️ High risk detected! Alert sent to specialist cardiologists."
+          : "✅ Your heart status appears normal. Continue monitoring.";
+
       setResult({
         success: true,
-        prediction: data.body.prediction,
-        features: data.body.features,
+        prediction: prediction,
+        riskStatus: riskStatus,
+        features: data.body?.features,
+        message: message,
       });
     } catch (err) {
       setResult({ error: String(err) });
@@ -320,38 +342,52 @@ const PatientDashboardForm = () => {
           </div>
 
           {result && (
-            <div className="full-span mt-6 p-4 border rounded-lg bg-gray-50 animate-result">
+            <div
+              className={`full-span mt-6 p-6 border-l-4 rounded-lg animate-result ${
+                result.error
+                  ? "bg-red-50 border-red-600"
+                  : result.prediction === 1
+                  ? "bg-red-50 border-red-600"
+                  : "bg-green-50 border-green-600"
+              }`}
+            >
               {result.error ? (
-                <div className="text-red-600">
-                  <strong>Error: </strong>
+                <div className="text-red-700">
+                  <strong>⚠️ Error: </strong>
                   <span>{result.error}</span>
                 </div>
               ) : (
                 <div>
-                  <h4 className="text-lg font-semibold mb-2 text-blue-600">
-                    Prediction
+                  <h4
+                    className={`text-lg font-semibold mb-3 ${
+                      result.prediction === 1
+                        ? "text-red-700"
+                        : "text-green-700"
+                    }`}
+                  >
+                    Risk Assessment: {result.riskStatus}
                   </h4>
-                  <p className="text-md mb-3">
-                    {result.prediction === 1 ? (
-                      <span className="text-red-600 font-bold">Risk</span>
-                    ) : (
-                      <span className="text-green-600 font-bold">Normal</span>
-                    )}
-                  </p>
+                  <p className="text-md mb-3 text-gray-800">{result.message}</p>
 
-                  {result.features && (
-                    <div className="text-sm text-gray-700">
-                      <strong>Features used:</strong>
-                      <ul className="list-disc ml-5 mt-2 space-y-1">
-                        <li>Systolic: {result.features[0]} mmHg</li>
-                        <li>Diastolic: {result.features[1]} mmHg</li>
-                        <li>Heart Rate: {result.features[2]} bpm</li>
-                        <li>Glucose: {result.features[3]} mg/dL</li>
-                        <li>Temperature: {result.features[4]} °C</li>
-                        <li>SpO₂: {result.features[5]} %</li>
-                      </ul>
+                  {result.prediction === 1 && (
+                    <div className="bg-red-100 border border-red-300 rounded p-3 mb-3">
+                      <p className="text-red-700 font-semibold">
+                        ✉️ Alert has been sent to specialist cardiologists
+                      </p>
                     </div>
                   )}
+
+                  <div className="text-sm text-gray-700 bg-white p-3 rounded">
+                    <strong>Measurements Recorded:</strong>
+                    <ul className="list-disc ml-5 mt-2 space-y-1">
+                      <li>Systolic: {result.features?.[0]} mmHg</li>
+                      <li>Diastolic: {result.features?.[1]} mmHg</li>
+                      <li>Heart Rate: {result.features?.[2]} bpm</li>
+                      <li>Glucose: {result.features?.[3]} mg/dL</li>
+                      <li>Temperature: {result.features?.[4]} °C</li>
+                      <li>SpO₂: {result.features?.[5]} %</li>
+                    </ul>
+                  </div>
                 </div>
               )}
             </div>

@@ -5,7 +5,6 @@ const AVAILABLE = [
   { id: "heartDisease", label: "Heart Disease" },
   { id: "diabetes", label: "Diabetes" },
   { id: "hypertension", label: "Hypertension" },
-  { id: "asthma", label: "Asthma" },
 ];
 
 const Sympthoms = () => {
@@ -13,9 +12,13 @@ const Sympthoms = () => {
     <div className="min-h-screen bg-[url('Slogo.jpg')] bg-cover from-white to-gray-50 p-6">
       <div className="max-w-5xl mx-auto">
         <header className="mb-6">
-          <h1 className="text-3xl font-extrabold text-gray-900">Symptoms</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            Health Conditions
+          </h1>
           <p className="mt-2 text-white">
-            Browse common health conditions and view details for each.
+            Select one of 3 conditions below to enter your health data and get
+            an instant risk assessment. If risk is detected, specialists will be
+            automatically alerted.
           </p>
         </header>
 

@@ -14,10 +14,6 @@ const DETAILS = {
     title: "Hypertension (High Blood Pressure)",
     body: "Hypertension is when blood pressure is consistently too high. It increases risk of heart disease, stroke, and other health issues.",
   },
-  asthma: {
-    title: "Asthma",
-    body: "Asthma is a condition in which your airways narrow and swell and may produce extra mucus — causing breathing difficulty and wheezing.",
-  },
 };
 
 const SymptomDetail = () => {
@@ -60,40 +56,28 @@ const SymptomDetail = () => {
           <p className="mt-2 text-gray-600">{info.body}</p>
 
           <div className="mt-4 flex space-x-3">
-            {id === "heartDisease" ? (
+            {id === "heartDisease" && (
               <Link
                 to="/patientDashboardForm"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
               >
-                Enter health Data
+                Enter Heart Data
               </Link>
-            ) : id === "diabetes" ? (
+            )}
+            {id === "diabetes" && (
               <Link
                 to="/Diabetics"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
               >
-                Enter health Data
+                Enter Diabetes Data
               </Link>
-            ) : id === "asthma" ? (
-              <Link
-                to="/asthma"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Enter health Data
-              </Link>
-            ) : id === "hypertension" ? (
+            )}
+            {id === "hypertension" && (
               <Link
                 to="/hypertension"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
               >
-                Enter health Data
-              </Link>
-            ) : (
-              <Link
-                to={`/Sympthoms/action/${id}`}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Enter health Data
+                Enter Hypertension Data
               </Link>
             )}
 
