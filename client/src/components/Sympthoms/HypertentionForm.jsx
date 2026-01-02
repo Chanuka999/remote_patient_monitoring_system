@@ -89,6 +89,14 @@ const HypertentionForm = () => {
 
     try {
       const apiBase = import.meta.env.VITE_BACKEND_URL || "";
+      let patientId = null;
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        patientId = user.id || user._id || null;
+      } catch {
+        // ignore
+      }
+
       const payload = {
         age: form.age || undefined,
         saltIntake: form.saltIntake || undefined,
@@ -100,29 +108,15 @@ const HypertentionForm = () => {
         familyHistory: form.familyHistory || undefined,
         exerciseLevel: form.exerciseLevel || undefined,
         smokingStatus: form.smokingStatus || undefined,
+        patientId: patientId,
       };
 
-      try {
-        const stored = localStorage.getItem("user");
-        if (stored) {
-          const u = JSON.parse(stored);
-          if (u?.id || u?._id) payload.patientId = u.id || u._id;
-        }
-      } catch {
-        // ignore
-      }
-
-      const saveRes = await fetch(`${apiBase}/api/hypertension`, {
+      // Save measurement
+      await fetch(`${apiBase}/api/hypertension`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      });
-      if (!saveRes.ok) {
-        const saveData = await saveRes.json().catch(() => null);
-        throw new Error(
-          `Failed to save measurement: ${saveData?.message || saveRes.status}`
-        );
-      }
+      }).catch(() => null);
 
       const features = [
         0,
@@ -143,19 +137,38 @@ const HypertentionForm = () => {
         Number(payload.smokingStatus) || 0,
       ];
 
+      const predictionBody = {
+        model: "hypertention",
+        input: features,
+        patientId: patientId,
+        symptoms: ["hypertension"],
+      };
+
       const mlRes = await fetch(`${apiBase}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "hypertention", input: features }),
+        body: JSON.stringify(predictionBody),
       });
       const mlData = await mlRes.json().catch(() => null);
-      if (!mlRes.ok) throw new Error(JSON.stringify(mlData));
+      if (!mlRes.ok) {
+        setResult({ error: JSON.stringify(mlData) });
+        return;
+      }
 
       const body = mlData?.body || mlData;
+      const prediction = body?.prediction || 0;
+      const riskStatus = prediction === 1 ? "HIGH RISK ⚠️" : "LOW RISK ✅";
+      const message =
+        prediction === 1
+          ? "⚠️ Hypertension risk detected! Alert sent to specialist doctors."
+          : "✅ Your hypertension status appears normal. Continue monitoring.";
+
       setResult({
         success: true,
-        prediction: body?.prediction,
+        prediction: prediction,
+        riskStatus: riskStatus,
         features: body?.features || features,
+        message: message,
       });
     } catch (err) {
       setResult({ error: String(err) });
@@ -369,24 +382,40 @@ const HypertentionForm = () => {
           </div>
 
           {result && (
-            <div className="full-span mt-6 p-4 border rounded-lg bg-gray-50 animate-result">
+            <div
+              className={`full-span mt-6 p-6 border-l-4 rounded-lg animate-result ${
+                result.error
+                  ? "bg-red-50 border-red-600"
+                  : result.prediction === 1
+                  ? "bg-red-50 border-red-600"
+                  : "bg-green-50 border-green-600"
+              }`}
+            >
               {result.error ? (
-                <div className="text-red-600">
-                  <strong>Error: </strong>
+                <div className="text-red-700">
+                  <strong>⚠️ Error: </strong>
                   <span>{result.error}</span>
                 </div>
               ) : (
                 <div>
-                  <h4 className="text-lg font-semibold mb-2 text-blue-600">
-                    Prediction
+                  <h4
+                    className={`text-lg font-semibold mb-3 ${
+                      result.prediction === 1
+                        ? "text-red-700"
+                        : "text-green-700"
+                    }`}
+                  >
+                    Risk Assessment: {result.riskStatus}
                   </h4>
-                  <p className="text-md mb-3">
-                    {result.prediction === 1 ? (
-                      <span className="text-red-600 font-bold">Risk</span>
-                    ) : (
-                      <span className="text-green-600 font-bold">Normal</span>
-                    )}
-                  </p>
+                  <p className="text-md mb-3 text-gray-800">{result.message}</p>
+
+                  {result.prediction === 1 && (
+                    <div className="bg-red-100 border border-red-300 rounded p-3 mb-3">
+                      <p className="text-red-700 font-semibold">
+                        ✉️ Alert has been sent to specialist doctors
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

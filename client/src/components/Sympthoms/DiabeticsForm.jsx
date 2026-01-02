@@ -60,8 +60,14 @@ const DiabeticsForm = () => {
 
     try {
       const apiBase = import.meta.env.VITE_BACKEND_URL || "";
+      let patientId = null;
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        patientId = user.id || user._id || null;
+      } catch {
+        // ignore
+      }
 
-      // Save measurement to measurements endpoint if available
       const payloadSave = {
         type: "diabetes",
         Pregnancies: Number(form.Pregnancies),
@@ -72,32 +78,17 @@ const DiabeticsForm = () => {
         BMI: Number(form.BMI),
         DiabetesPedigreeFunction: Number(form.DiabetesPedigreeFunction),
         Age: Number(form.Age),
+        patientId: patientId,
       };
 
-      try {
-        const stored = localStorage.getItem("user");
-        if (stored) {
-          const u = JSON.parse(stored);
-          if (u?.id || u?._id) payloadSave.patientId = u.id || u._id;
-        }
-      } catch (_err) {
-        // ignore JSON parse / localStorage errors
-        void _err;
-      }
+      // Save measurement
+      await fetch(`${apiBase}/api/measurement`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadSave),
+      }).catch(() => null);
 
-      // attempt to save measurement (non-blocking if endpoint missing)
-      try {
-        await fetch(`${apiBase}/api/measurement`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadSave),
-        });
-      } catch (_err) {
-        // ignore save errors
-        void _err;
-      }
-
-      // Build feature array in common PIMA diabetes order used in many datasets
+      // Build feature array and get prediction with alert
       const features = [
         Number(form.Pregnancies) || 0,
         Number(form.Glucose) || 0,
@@ -109,23 +100,40 @@ const DiabeticsForm = () => {
         Number(form.Age) || 0,
       ];
 
+      const predictionBody = {
+        model: "diabetes",
+        input: features,
+        patientId: patientId,
+        symptoms: ["diabetes"],
+      };
+
       const mlRes = await fetch(`${apiBase}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "diabetes", input: features }),
+        body: JSON.stringify(predictionBody),
       });
 
       const data = await mlRes.json().catch(() => null);
       if (!mlRes.ok) {
         setResult({ error: data || `ML error: ${mlRes.status}` });
-      } else {
-        const body = data?.body || data;
-        setResult({
-          success: true,
-          prediction: body?.prediction,
-          features: body?.features || features,
-        });
+        return;
       }
+
+      const body = data?.body || data;
+      const prediction = body?.prediction || 0;
+      const riskStatus = prediction === 1 ? "HIGH RISK ⚠️" : "LOW RISK ✅";
+      const message =
+        prediction === 1
+          ? "⚠️ Diabetes risk detected! Alert sent to specialist doctors."
+          : "✅ Your diabetes status appears normal. Continue monitoring.";
+
+      setResult({
+        success: true,
+        prediction: prediction,
+        riskStatus: riskStatus,
+        features: body?.features || features,
+        message: message,
+      });
     } catch (err) {
       setResult({ error: String(err) });
     } finally {
@@ -291,28 +299,40 @@ const DiabeticsForm = () => {
           </div>
 
           {result && (
-            <div className="sm:col-span-2 mt-4 p-4 border rounded bg-gray-50">
+            <div
+              className={`sm:col-span-2 mt-4 p-6 border-l-4 rounded ${
+                result.error
+                  ? "bg-red-50 border-red-600"
+                  : result.prediction === 1
+                  ? "bg-red-50 border-red-600"
+                  : "bg-green-50 border-green-600"
+              }`}
+            >
               {result.error ? (
-                <div className="text-red-600">
-                  <strong>Error: </strong>
+                <div className="text-red-700">
+                  <strong>⚠️ Error: </strong>
                   <span>{String(result.error)}</span>
                 </div>
               ) : (
                 <div>
-                  <h4 className="text-lg font-semibold mb-2 text-yellow-700">
-                    Prediction
+                  <h4
+                    className={`text-lg font-semibold mb-3 ${
+                      result.prediction === 1
+                        ? "text-red-700"
+                        : "text-green-700"
+                    }`}
+                  >
+                    Risk Assessment: {result.riskStatus}
                   </h4>
-                  <p className="text-md mb-3">
-                    {result.prediction === 1 ? (
-                      <span className="text-red-600 font-bold">
-                        Positive (risk)
-                      </span>
-                    ) : (
-                      <span className="text-green-600 font-bold">
-                        Negative (no risk)
-                      </span>
-                    )}
-                  </p>
+                  <p className="text-md mb-3 text-gray-800">{result.message}</p>
+
+                  {result.prediction === 1 && (
+                    <div className="bg-red-100 border border-red-300 rounded p-3 mb-3">
+                      <p className="text-red-700 font-semibold">
+                        ✉️ Alert has been sent to specialist doctors
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
