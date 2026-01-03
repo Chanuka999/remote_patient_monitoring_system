@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { FiMenu, FiX } from "react-icons/fi";
@@ -7,6 +7,13 @@ import { useTranslation } from "react-i18next";
 const Navbar = ({ theme, setTheme }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem("token"));
+    } catch {
+      return false;
+    }
+  });
 
   const { t, i18n } = useTranslation();
 
@@ -21,6 +28,33 @@ const Navbar = ({ theme, setTheme }) => {
     } catch {
       /* noop */
     }
+  };
+
+  useEffect(() => {
+    // keep auth state in sync across tabs
+    const syncAuth = () => {
+      try {
+        setIsAuthenticated(Boolean(localStorage.getItem("token")));
+      } catch {
+        setIsAuthenticated(false);
+      }
+    };
+
+    syncAuth();
+    window.addEventListener("storage", syncAuth);
+    return () => window.removeEventListener("storage", syncAuth);
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } catch {
+      /* noop */
+    }
+    setIsAuthenticated(false);
+    setIsOpen(false);
+    navigate("/login");
   };
 
   const navLinks = [
@@ -104,10 +138,12 @@ const Navbar = ({ theme, setTheme }) => {
             </div>
 
             <button
-              onClick={() => navigate("/login")}
+              onClick={
+                isAuthenticated ? handleLogout : () => navigate("/login")
+              }
               className="px-4 py-2 bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-blue-500/40 transition-all duration-300"
             >
-              Get Start
+              {isAuthenticated ? "Logout" : "Get Start"}
             </button>
 
             {/* Mobile Menu Toggle */}
@@ -148,6 +184,19 @@ const Navbar = ({ theme, setTheme }) => {
                   {t(link.key)}
                 </NavLink>
               ))}
+              <button
+                onClick={() => {
+                  if (isAuthenticated) {
+                    handleLogout();
+                  } else {
+                    setIsOpen(false);
+                    navigate("/login");
+                  }
+                }}
+                className="w-full text-center py-2 rounded-md font-semibold transition-all hover:text-blue-500 hover:bg-blue-100/30"
+              >
+                {isAuthenticated ? "Logout" : "Get Start"}
+              </button>
             </div>
           </div>
         )}

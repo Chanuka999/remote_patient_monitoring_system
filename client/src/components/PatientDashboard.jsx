@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PatientDashboardForm from "./PatientDashboardForm";
 import { useEffect } from "react";
 
@@ -39,6 +39,7 @@ const defaultChart = {
 };
 
 const HealthDashboard = () => {
+  const navigate = useNavigate();
   const [chartData, _setChartData] = useState([
     defaultChart,
     defaultChart,
@@ -46,6 +47,7 @@ const HealthDashboard = () => {
     defaultChart,
     defaultChart,
   ]);
+  const [now, setNow] = useState(() => new Date());
 
   // Read logged-in user from localStorage (set by Login.jsx)
   let storedUser = null;
@@ -91,6 +93,11 @@ const HealthDashboard = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const addSymptom = () => {
     const s = String(newSymptom || "").trim();
     if (!s) return;
@@ -133,6 +140,16 @@ const HealthDashboard = () => {
     }
   };
 
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } catch {
+      /* noop */
+    }
+    navigate("/login");
+  };
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br text-gray">
       <div className="w-64 bg-gray-400 bg-opacity-30 text-black p-6 flex flex-col  items-center backdrop-blur-sm ">
@@ -151,7 +168,9 @@ const HealthDashboard = () => {
             <div>📞 Telehealth</div>
             <div>⚙️ Settings</div>
             <div>
-              <Link to="/login">➡️Logout</Link>
+              <button onClick={handleLogout} className="hover:underline">
+                ➡️Logout
+              </button>
             </div>
           </nav>
         </div>
@@ -160,8 +179,21 @@ const HealthDashboard = () => {
       <div className="flex-1 p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-lg font-semibold">Monday, January 28, 2019</h3>
-            <p className="text-sm text-gray-500">9:00 AM</p>
+            <h3 className="text-lg font-semibold">
+              {now.toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </h3>
+            <p className="text-sm text-gray-500">
+              {now.toLocaleTimeString(undefined, {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
+            </p>
           </div>
           <div>
             <Link
