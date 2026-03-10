@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useTheme } from "../context/ThemeContext";
 
 const DEFAULTS = {
   dark: {
-    "--app-bg": "#2D1B0E",
-    "--app-text": "#FDE68A",
-    "--card-bg": "#1F2937",
+    "--app-bg": "#0F172A",
+    "--app-text": "#F8FAFC",
+    "--card-bg": "#1E293B",
   },
   light: {
     "--app-bg": "#F8FAFC",
@@ -17,7 +18,7 @@ const DEFAULTS = {
 };
 
 const applyThemeVars = (theme) => {
-  const vars = DEFAULTS[theme] || DEFAULTS.dark;
+  const vars = DEFAULTS[theme] || DEFAULTS.light;
   Object.entries(vars).forEach(([k, v]) => {
     try {
       document.documentElement.style.setProperty(k, v);
@@ -28,32 +29,23 @@ const applyThemeVars = (theme) => {
 };
 
 const RootLayout = () => {
-  const [theme, setTheme] = useState(() => {
-    try {
-      return localStorage.getItem("theme") || "dark";
-    } catch {
-      /* noop */
-      return "dark";
-    }
-  });
+  const { theme } = useTheme();
 
   useEffect(() => {
     applyThemeVars(theme);
-    try {
-      localStorage.setItem("theme", theme);
-    } catch {
-      /* noop */
-    }
   }, [theme]);
 
   return (
     <div
-      className="min-h-screen"
-      style={{ backgroundColor: "var(--app-bg)", color: "var(--app-text)" }}
+      className={`min-h-screen w-full transition-colors duration-300 ${
+        theme === "dark"
+          ? "bg-slate-900 text-white"
+          : "bg-gray-50 text-gray-900"
+      }`}
     >
-      <Navbar theme={theme} setTheme={setTheme} />
-      <main className="pt-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Navbar />
+      <main className="w-full">
+        <div className="max-w-full mx-auto px-0 sm:px-0 lg:px-0">
           <Outlet />
         </div>
       </main>

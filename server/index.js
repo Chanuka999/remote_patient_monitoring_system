@@ -10,6 +10,9 @@ import measurementRouter from "./routes/measurementRouter.js";
 import hypertensionRouter from "./routes/hypertensionRouter.js";
 import alertRouter from "./routes/alertRouter.js";
 import debugRouter from "./routes/debugRouter.js";
+import messageRouter from "./routes/messageRouter.js";
+import appointmentRouter from "./routes/appointmentRouter.js";
+import hospitalRouter from "./routes/hospitalRouter.js";
 
 import { connectDb } from "./lib/db.js";
 import { ML_HOST, ML_PORT } from "./lib/utils.js";
@@ -28,15 +31,15 @@ const PORT = Number(process.env.PORT) || 3000;
 // Log chat API config status (kept for compatibility with existing code)
 const _chatApiConfigured = Boolean(
   process.env.API_CHAT_URL ||
-    process.env.VITE_API_URL ||
-    process.env.API_CHAT_KEY ||
-    process.env.CHAT_API_KEY
+  process.env.VITE_API_URL ||
+  process.env.API_CHAT_KEY ||
+  process.env.CHAT_API_KEY,
 );
 console.log(
   "chat API configured on server:",
   _chatApiConfigured
     ? "yes"
-    : "no (set API_CHAT_URL or API_CHAT_KEY in server env)"
+    : "no (set API_CHAT_URL or API_CHAT_KEY in server env)",
 );
 
 // Mount routers under /api for a clean structure
@@ -45,6 +48,9 @@ app.use("/api", predictRouter);
 app.use("/api", measurementRouter);
 app.use("/api", hypertensionRouter);
 app.use("/api", alertRouter);
+app.use("/api", hospitalRouter);
+app.use("/api", messageRouter);
+app.use("/api/appointments", appointmentRouter);
 app.use("/api/debug", debugRouter);
 
 // User routes (register/login) are mounted at root in current client expectations
@@ -74,7 +80,7 @@ const start = async () => {
             "socket join room",
             String(doctorId),
             "socket",
-            socket.id
+            socket.id,
           );
         }
       } catch (err) {
@@ -89,7 +95,7 @@ const start = async () => {
     console.log(`server is starting on ${PORT}`);
     if (mongoose.connection.readyState !== 1) {
       console.warn(
-        "Server started but DB is not connected. Registrations will fail until DB is available."
+        "Server started but DB is not connected. Registrations will fail until DB is available.",
       );
     }
     console.log(`ML_HOST=${ML_HOST} ML_PORT=${ML_PORT}`);
