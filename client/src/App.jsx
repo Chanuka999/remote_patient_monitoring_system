@@ -15,6 +15,7 @@ import PatientDashboardForm from "./components/PatientDashboardForm";
 import PatientDashboard from "./components/PatientDashboard";
 import DoctorDashboard from "./components/DoctorDashboard";
 import Appointment from "./components/Appointment";
+import BookAppointment from "./components/BookAppointment";
 import Sympthoms from "./components/Sympthoms";
 import SymptomDetail from "./components/SymptomDetail";
 import SymptomAction from "./components/SymptomAction";
@@ -24,6 +25,8 @@ import HypertensionForm from "./components/Sympthoms/HypertentionForm";
 import Chat from "./Chat";
 import Contact from "./pages/Contact";
 import Hospital from "./pages/HospitalCare";
+import Messages from "./components/Messages";
+import Settings from "./components/Settings";
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
@@ -37,6 +40,7 @@ function App() {
         <Route path="patientDashboard" element={<PatientDashboard />} />
         <Route path="doctorDashboard" element={<DoctorDashboard />} />
         <Route path="appointment" element={<Appointment />} />
+        <Route path="book-appointment" element={<BookAppointment />} />
         <Route path="Sympthoms" element={<Sympthoms />} />
         <Route path="Sympthoms/:id" element={<SymptomDetail />} />
         <Route path="Sympthoms/action/:id" element={<SymptomAction />} />
@@ -45,8 +49,10 @@ function App() {
         <Route path="hypertension" element={<HypertensionForm />} />
         <Route path="chat" element={<Chat />} />
         <Route path="contact" element={<Contact />} />
-      </Route>
-    )
+        <Route path="messages" element={<Messages />} />
+        <Route path="settings" element={<Settings />} />
+      </Route>,
+    ),
   );
   return <RouterProvider router={router} />;
 }

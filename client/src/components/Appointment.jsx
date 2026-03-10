@@ -1,203 +1,342 @@
-import React from "react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Appointment = () => {
-  const [selectedView, setSelectedView] = useState("Appointments");
+  const navigate = useNavigate();
+  const [appointments, setAppointments] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [updating, setUpdating] = useState(null);
 
-  const navItems = [
-    { name: "Overview", icon: "📊", to: "/doctorDashboard" },
-    { name: "Appointments", icon: "📅", to: "/appointments" },
-    { name: "Inventory", icon: "📦", to: "/inventory" },
-    { name: "Patients", icon: "👥", to: "/patient" },
-    { name: "Settings", icon: "⚙️", to: "/settings" },
-  ];
+  const apiBase = import.meta.env.VITE_BACKEND_URL || "";
 
-  const appointments = [
-    {
-      time: "10:00 - 10:30",
-      name: "Howard Morrison",
-      cab: "#123",
-      status: "Complete",
-    },
-    {
-      time: "10:30 - 11:00",
-      name: "Gerard Gregory",
-      cab: "#123",
-      status: "Complete",
-    },
-    {
-      time: "12:00 - 12:30",
-      name: "Timmy Olson",
-      cab: "#148",
-      status: "Start",
-    },
-    {
-      time: "12:30 - 13:00",
-      name: "Jimm Stephens",
-      cab: "#147",
-      status: "Canceled",
-    },
-  ];
+  // Get current user and load appointments
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    setCurrentUser(user);
 
-  const user = {
-    name: "Timmy Olson",
-    address: "St Audrey's Close, New Jersey 28333",
-    photo:
-      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8cGVvcGxlfGVufDB8fDB8fHww",
-    patient: {
-      dob: "16 August, 1984",
-      height: "184 cm",
-      weight: "48kg",
-      disease: "Austma",
-    },
+    if (!user.id && !user._id) {
+      navigate("/login");
+      return;
+    }
+
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        const userId = user.id || user._id;
+        const isDoctor = user.role === "doctor";
+
+        const endpoint = isDoctor
+          ? `${apiBase}/api/appointments/doctor/${userId}`
+          : `${apiBase}/api/appointments/patient/${userId}`;
+
+        const response = await fetch(endpoint);
+        const result = await response.json();
+
+        if (result.success) {
+          setAppointments(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, [navigate, apiBase]);
+
+  // Update appointment status (doctor only)
+  const updateAppointmentStatus = async (appointmentId, newStatus) => {
+    try {
+      setUpdating(appointmentId);
+
+      const response = await fetch(
+        `${apiBase}/api/appointments/${appointmentId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAppointments((prev) =>
+          prev.map((apt) =>
+            apt._id === appointmentId ? { ...apt, status: newStatus } : apt,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+    } finally {
+      setUpdating(null);
+    }
   };
 
-  const handleLogout = () => {
-    alert("Logged out!");
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border border-yellow-300";
+      case "approved":
+        return "bg-green-100 text-green-800 border border-green-300";
+      case "completed":
+        return "bg-blue-100 text-blue-800 border border-blue-300";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border border-red-300";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "pending":
+        return "⏳";
+      case "approved":
+        return "✅";
+      case "completed":
+        return "✔️";
+      case "cancelled":
+        return "❌";
+      default:
+        return "•";
+    }
+  };
+
+  const filteredAppointments = appointments.filter(
+    (apt) => selectedStatus === "all" || apt.status === selectedStatus,
+  );
+
+  const isDoctor = currentUser?.role === "doctor";
+
   return (
-    <div className="flex h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold">Appointment</h1>
-        </div>
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            to={item.to}
-            className={`sidebar-item flex items-center p-2 rounded-lg mb-2 cursor-pointer ${
-              selectedView === item.name ? "bg-green-600" : ""
-            }`}
-            onClick={() => setSelectedView(item.name)}
-          >
-            <span className="mr-2">{item.icon}</span>
-            <span>{item.name}</span>
-          </Link>
-        ))}
-        <Link
-          to="/login"
-          onClick={handleLogout}
-          className="w-full mt-8 bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-600 flex items-center justify-start pl-2"
-        >
-          <span className="mr-2">🚪</span> Log out
-        </Link>
-      </div>
-
-      <div className="flex-1 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <input
-            type="text"
-            placeholder="Search by keywords..."
-            className="w-1/3 p-2 border rounded-lg"
-          />
-          <div className="flex items-center space-x-4">
-            <span>Today, 12 April</span>
-            <span>09:32 AM</span>
-            <span className="cursor-pointer">🔔</span>
-          </div>
-        </div>
-
-        {/* Welcome Section */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold">Welcome, Dr. Terry!</h2>
-          <p className="text-gray-600">
-            Check the latest updates on your account
+          <h1 className="text-4xl font-bold text-white mb-2 flex items-center space-x-2">
+            <span>📅 Appointments</span>
+          </h1>
+          <p className="text-slate-300">
+            {isDoctor
+              ? "Manage appointment requests from your patients"
+              : "Book and manage your doctor appointments"}
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="flex space-x-6 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-2xl">📅 28 / 45</div>
-            <div>Today’s appointments</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-2xl">❌ 13 / 45</div>
-            <div>Canceled appointments</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-2xl">👥 283</div>
-            <div>Total patients</div>
-          </div>
+        {/* Action Buttons */}
+        <div className="mb-6 flex gap-4">
+          {!isDoctor && (
+            <button
+              onClick={() => navigate("/book-appointment")}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-bold hover:shadow-lg transition flex items-center space-x-2"
+            >
+              <span>+ 📅 Book New Appointment</span>
+            </button>
+          )}
+          <Link
+            to={isDoctor ? "/doctorDashboard" : "/patientDashboard"}
+            className="px-6 py-3 bg-slate-700 text-white rounded-lg font-bold hover:bg-slate-600 transition"
+          >
+            ← Back to Dashboard
+          </Link>
         </div>
 
-        {/* Appointments */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex justify-between mb-4">
-            <h3 className="text-xl font-semibold">Appointments</h3>
-            <div className="flex space-x-2">
-              <button className="px-2 py-1 bg-gray-200 rounded">Day</button>
-              <button className="px-2 py-1 bg-gray-200 rounded">Week</button>
-              <button className="px-2 py-1 bg-gray-200 rounded">Month</button>
-              <span>12 April</span>
-              <button>⬅️</button>
-              <button>➡️</button>
-            </div>
+        {/* Status Filter */}
+        <div className="mb-6 flex gap-2">
+          {["all", "pending", "approved", "completed", "cancelled"].map(
+            (status) => (
+              <button
+                key={status}
+                onClick={() => setSelectedStatus(status)}
+                className={`px-4 py-2 rounded-lg font-semibold transition ${
+                  selectedStatus === status
+                    ? "bg-blue-500 text-white shadow-lg"
+                    : "bg-white text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                {status === "all"
+                  ? "All"
+                  : status.charAt(0).toUpperCase() + status.slice(1)}
+                {status !== "all" &&
+                  ` (${appointments.filter((apt) => apt.status === status).length})`}
+              </button>
+            ),
+          )}
+        </div>
+
+        {/* Appointments Section */}
+        <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6">
+            <h2 className="text-2xl font-bold text-white">
+              {isDoctor ? "📋 Appointment Requests" : "📝 Your Appointments"}
+            </h2>
           </div>
-          {appointments.map((app, index) => (
-            <div
-              key={index}
-              className="appointment-card flex items-center justify-between p-2 mb-2 rounded-lg"
-            >
-              <div className="flex items-center space-x-4">
-                <span>{app.time}</span>
-                <img
-                  src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8cGVvcGxlfGVufDB8fDB8fHww"
-                  alt="Profile"
-                  className="rounded-full h-10 w-10"
-                />
-                <span>{app.name}</span>
-                <span>Cab: {app.cab}</span>
+
+          <div className="p-8">
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin text-5xl mb-4">
+                  ⏳
+                </div>
+                <p className="text-slate-600 text-lg">
+                  Loading appointments...
+                </p>
               </div>
-              <div className="flex items-center space-x-2">
-                {app.status === "Complete" && (
-                  <span className="text-green-500">✔️ Complete</span>
-                )}
-                {app.status === "Start" && (
-                  <button className="bg-black text-white px-2 py-1 rounded">
-                    ▶️ Start
+            ) : filteredAppointments.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📭</div>
+                <p className="text-slate-600 text-lg font-medium">
+                  {isDoctor
+                    ? "No appointment requests"
+                    : "No appointments booked"}
+                </p>
+                {!isDoctor && (
+                  <button
+                    onClick={() => navigate("/book-appointment")}
+                    className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600"
+                  >
+                    Book Your First Appointment
                   </button>
                 )}
-                {app.status === "Canceled" && (
-                  <span className="text-red-500">❌ Canceled</span>
-                )}
-                <span className="text-gray-400">...</span>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredAppointments.map((appointment) => (
+                  <div
+                    key={appointment._id}
+                    className="border-2 border-slate-200 rounded-lg p-6 hover:shadow-lg transition"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-xl font-bold text-slate-900">
+                            {isDoctor
+                              ? `👤 ${appointment.patientSnapshot?.name || "Unknown Patient"}`
+                              : `👨‍⚕️ Dr. ${appointment.doctorSnapshot?.name || "Unknown Doctor"}`}
+                          </h3>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-bold ${getStatusColor(
+                              appointment.status,
+                            )}`}
+                          >
+                            {getStatusIcon(appointment.status)}{" "}
+                            {appointment.status.charAt(0).toUpperCase() +
+                              appointment.status.slice(1)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-slate-600">
+                          📅{" "}
+                          {new Date(
+                            appointment.appointmentDate,
+                          ).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm text-slate-600">
+                          ⏰ {appointment.timeSlot}
+                        </p>
+                      </div>
+                    </div>
 
-      <div className="w-80 bg-white p-4 rounded-lg shadow ml-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold">Patient details</h3>
-          <span className="cursor-pointer">❌</span>
-        </div>
-        <img
-          src={user.photo}
-          alt="User"
-          className="rounded-full mb-2 mx-auto block h-40 w-40"
-        />
-        <h4 className="font-bold">{user.name}</h4>
-        <p>{user.address}</p>
-        <div className="mt-4">
-          <p>D.O.B: {user.patient.dob}</p>
-          <p>Height: {user.patient.height}</p>
-          <p>Weight: {user.patient.weight}</p>
-          <p>
-            Disease:{" "}
-            <span className="text-red-500">{user.patient.disease}</span>
-          </p>
-        </div>
-        <div className="mt-4 flex space-x-2">
-          <button className="bg-purple-500 text-white px-2 py-1 rounded">
-            📋
-          </button>
-          <button className="bg-green-500 text-white px-2 py-1 rounded">
-            📨
-          </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-slate-50 p-4 rounded-lg">
+                        <p className="text-sm text-slate-600 mb-2">
+                          {isDoctor ? "Patient Contact" : "Doctor Contact"}
+                        </p>
+                        <p className="font-semibold text-slate-900">
+                          📧{" "}
+                          {isDoctor
+                            ? appointment.patientSnapshot?.email
+                            : appointment.doctorSnapshot?.email}
+                        </p>
+                        <p className="font-semibold text-slate-900">
+                          📱{" "}
+                          {isDoctor
+                            ? appointment.patientSnapshot?.number
+                            : appointment.doctorSnapshot?.number}
+                        </p>
+                      </div>
+
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm text-slate-600 mb-2">
+                          Reason for Visit
+                        </p>
+                        <p className="font-semibold text-slate-900">
+                          {appointment.reason}
+                        </p>
+                      </div>
+                    </div>
+
+                    {appointment.notes && (
+                      <div className="bg-green-50 p-4 rounded-lg mb-4 border-l-4 border-green-500">
+                        <p className="text-sm text-slate-600 mb-1">
+                          Doctor's Notes
+                        </p>
+                        <p className="text-slate-900">{appointment.notes}</p>
+                      </div>
+                    )}
+
+                    {/* Doctor Actions */}
+                    {isDoctor && appointment.status === "pending" && (
+                      <div className="flex gap-3 pt-4">
+                        <button
+                          onClick={() =>
+                            updateAppointmentStatus(appointment._id, "approved")
+                          }
+                          disabled={updating === appointment._id}
+                          className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition disabled:opacity-50"
+                        >
+                          {updating === appointment._id
+                            ? "⏳ Approving..."
+                            : "✅ Approve"}
+                        </button>
+                        <button
+                          onClick={() =>
+                            updateAppointmentStatus(
+                              appointment._id,
+                              "cancelled",
+                            )
+                          }
+                          disabled={updating === appointment._id}
+                          className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition disabled:opacity-50"
+                        >
+                          {updating === appointment._id
+                            ? "⏳ Rejecting..."
+                            : "❌ Reject"}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Mark as completed (Doctor) */}
+                    {isDoctor && appointment.status === "approved" && (
+                      <button
+                        onClick={() =>
+                          updateAppointmentStatus(appointment._id, "completed")
+                        }
+                        disabled={updating === appointment._id}
+                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition disabled:opacity-50 mt-4"
+                      >
+                        {updating === appointment._id
+                          ? "⏳ Marking Complete..."
+                          : "✔️ Mark as Completed"}
+                      </button>
+                    )}
+
+                    {/* Patient Info */}
+                    <p className="text-xs text-slate-500 mt-4">
+                      📋 Booked on{" "}
+                      {new Date(appointment.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

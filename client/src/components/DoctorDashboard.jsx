@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import { Link } from "react-router-dom";
 import ioClient from "socket.io-client";
+import { useTheme } from "../context/ThemeContext";
 
 ChartJS.register(
   CategoryScale,
@@ -24,7 +25,7 @@ ChartJS.register(
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 // Mock data for patient details pie chart
 const patientPieData = {
@@ -65,6 +66,7 @@ const appointmentsBarData = {
 // (no defaultChart needed in this view)
 
 const DoctorDashboard = () => {
+  const { theme } = useTheme();
   const [doctor, setDoctor] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
@@ -121,7 +123,7 @@ const DoctorDashboard = () => {
           "socket connected (client)",
           socket.id,
           "attempt join",
-          doctor.id
+          doctor.id,
         );
         socket.emit("join", { doctorId: doctor.id });
       } catch (e) {
@@ -181,7 +183,7 @@ const DoctorDashboard = () => {
       const json = await res.json();
       if (json?.success) {
         setAlerts((prev) =>
-          prev.map((a) => (a._id === id ? { ...a, read: true } : a))
+          prev.map((a) => (a._id === id ? { ...a, read: true } : a)),
         );
       }
     } catch (e) {
@@ -189,173 +191,701 @@ const DoctorDashboard = () => {
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="w-64 bg-gray-900 text-white p-6 flex flex-col justify-between">
-        <div>
-          <h2 className="text-xl font-bold mb-6">Doctor Dashboard</h2>
-          <nav className="space-y-4 text-sm">
-            <div>
-              <Link to="/PatientDashboard">🏠 Dashboard</Link>
-            </div>
-            <div>
-              <Link to="/appointment">👥 appointments</Link>
-            </div>
-            <div>💬 Messages</div>
-            <div>📞 our staff</div>
-            <div>⚙️ Settings</div>
+  // Get current date and time
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const timeStr = now.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-            <div>
-              <Link to="/login">➡️Logout</Link>
+  // Count metrics
+  const highRiskAlerts = alerts.filter((a) => a.prediction === 1).length;
+  const unreadAlerts = alerts.filter((a) => !a.read).length;
+
+  return (
+    <div
+      className={`flex min-h-screen transition-colors duration-300 ${
+        theme === "dark"
+          ? "bg-gradient-to-br from-slate-900 to-slate-800"
+          : "bg-gradient-to-br from-slate-50 to-blue-50"
+      }`}
+    >
+      {/* Sidebar */}
+      <div
+        className={`w-72 p-6 flex flex-col justify-between fixed h-screen shadow-xl transition-colors duration-300 ${
+          theme === "dark"
+            ? "bg-gradient-to-b from-slate-800 via-slate-900 to-slate-900 text-white"
+            : "bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800 text-white"
+        }`}
+      >
+        <div>
+          {/* Logo/Header */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              Doctor Portal
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">Healthcare Management</p>
+          </div>
+
+          {/* Navigation */}
+          <nav className="space-y-2">
+            <Link
+              to="/doctorDashboard"
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition duration-200 group"
+            >
+              <span className="text-xl group-hover:scale-110 transition">
+                🏠
+              </span>
+              <span className="text-sm font-medium">Dashboard</span>
+            </Link>
+
+            <Link
+              to="/appointment"
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition duration-200 group"
+            >
+              <span className="text-xl group-hover:scale-110 transition">
+                📅
+              </span>
+              <span className="text-sm font-medium">Appointments</span>
+            </Link>
+
+            <Link
+              to="/messages"
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition duration-200 group"
+            >
+              <span className="text-xl group-hover:scale-110 transition">
+                💬
+              </span>
+              <span className="text-sm font-medium">Messages</span>
+            </Link>
+
+            <Link
+              to="#staff"
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition duration-200 group"
+            >
+              <span className="text-xl group-hover:scale-110 transition">
+                👥
+              </span>
+              <span className="text-sm font-medium">Team</span>
+            </Link>
+
+            <Link
+              to="/settings"
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition duration-200 group"
+            >
+              <span className="text-xl group-hover:scale-110 transition">
+                ⚙️
+              </span>
+              <span className="text-sm font-medium">Settings</span>
+            </Link>
+
+            <div className="pt-4 border-t border-slate-700">
+              <Link
+                to="/login"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-900 transition duration-200 group text-red-300"
+              >
+                <span className="text-xl group-hover:scale-110 transition">
+                  🚪
+                </span>
+                <span className="text-sm font-medium">Logout</span>
+              </Link>
             </div>
           </nav>
         </div>
-        <div className="mt-6 text-sm ">
+
+        {/* Profile Card */}
+        <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-4 border border-slate-600">
           <img
             src="https://t4.ftcdn.net/jpg/02/60/04/09/360_F_260040900_oO6YW1sHTnKxby4GcjCvtypUCWjnQRg5.jpg"
             alt="doctor"
-            className="w-16 h-16 rounded-full mx-auto mb-2"
+            className="w-12 h-12 rounded-full mx-auto mb-3 border-2 border-blue-400"
           />
-          <h4 className="text-center font-semibold">
-            {doctor?.name || "Dr Nimal perera"}
+          <h4 className="text-center font-bold text-sm truncate">
+            {doctor?.name || "Dr. Nimal Perera"}
           </h4>
-          <p className="text-center">
-            {doctor?.email || "nimalperera23@gmail.com"}
+          <p className="text-center text-xs text-slate-400 truncate">
+            {doctor?.email || "doctor@hospital.com"}
+          </p>
+          <p className="text-center text-xs text-slate-300 mt-2 font-medium">
+            Medical Professional
           </p>
         </div>
       </div>
 
-      <div className="flex-1 p-6">
-        <div className="flex justify-between items-center mb-6">
+      {/* Main Content */}
+      <div className="ml-72 flex-1 p-8">
+        {/* Top Bar */}
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h3 className="text-lg font-semibold">Monday, January 28, 2019</h3>
-            <p className="text-sm text-gray-500">9:00 AM</p>
+            <h1
+              className={`text-3xl font-bold ${
+                theme === "dark" ? "text-white" : "text-slate-900"
+              }`}
+            >
+              Welcome, Dr. {doctor?.name?.split(" ").pop() || "Perera"}
+            </h1>
+            <p
+              className={`mt-1 flex items-center space-x-2 ${
+                theme === "dark" ? "text-slate-300" : "text-slate-500"
+              }`}
+            >
+              <span>📅</span>
+              <span>
+                {dateStr} • {timeStr}
+              </span>
+            </p>
           </div>
-          <div></div>
 
           <div className="flex items-center space-x-4">
             <input
               type="text"
-              placeholder="Search..."
-              className="px-3 py-1 border rounded-full"
+              placeholder="Search patients..."
+              className={`px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm ${
+                theme === "dark"
+                  ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                  : "bg-white border-slate-300 text-slate-900"
+              }`}
             />
-            <img
-              src="https://t4.ftcdn.net/jpg/02/60/04/09/360_F_260040900_oO6YW1sHTnKxby4GcjCvtypUCWjnQRg5.jpg"
-              alt="Doctor"
-              className="w-10 h-10 rounded-full"
-            />
-            <span>{doctor?.name || "Dr Nimal perera"}</span>
-          </div>
-        </div>
-        {/* Patient Details Pie Chart */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-4 rounded-lg shadow flex flex-col items-center">
-            <h4 className="text-md font-semibold mb-2">
-              Patient Gender Distribution
-            </h4>
-            <div className="w-64 h-64">
-              <Pie data={patientPieData} />
-            </div>
-          </div>
-          {/* Appointments Bar Chart */}
-          <div className="bg-white p-4 rounded-lg shadow flex flex-col items-center">
-            <h4 className="text-md font-semibold mb-2">
-              Appointments This Week
-            </h4>
-            <div className="w-64 h-64">
-              <Bar data={appointmentsBarData} />
+            <div
+              className={`flex items-center space-x-3 px-4 py-2 rounded-full shadow-sm border ${
+                theme === "dark"
+                  ? "bg-slate-700 border-slate-600"
+                  : "bg-white border-slate-200"
+              }`}
+            >
+              <img
+                src="https://t4.ftcdn.net/jpg/02/60/04/09/360_F_260040900_oO6YW1sHTnKxby4GcjCvtypUCWjnQRg5.jpg"
+                alt="Doctor"
+                className="w-8 h-8 rounded-full"
+              />
+              <span
+                className={`text-sm font-medium ${
+                  theme === "dark" ? "text-slate-200" : "text-slate-700"
+                }`}
+              >
+                {doctor?.name || "Dr. Nimal"}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Alerts list */}
-        <div className="mb-6">
-          <h4 className="text-lg font-semibold mb-2">Patient Alerts</h4>
-          <div className="bg-white p-4 rounded-lg shadow">
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div
+            className={`rounded-xl p-6 shadow-md border-l-4 border-blue-500 hover:shadow-lg transition ${
+              theme === "dark" ? "bg-slate-800" : "bg-white"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p
+                  className={`text-sm font-medium ${
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }`}
+                >
+                  Total Alerts
+                </p>
+                <p
+                  className={`text-3xl font-bold mt-2 ${
+                    theme === "dark" ? "text-white" : "text-slate-900"
+                  }`}
+                >
+                  {alerts.length}
+                </p>
+              </div>
+              <div className="text-4xl text-blue-500">🔔</div>
+            </div>
+          </div>
+
+          <div
+            className={`rounded-xl p-6 shadow-md border-l-4 border-red-500 hover:shadow-lg transition ${
+              theme === "dark" ? "bg-slate-800" : "bg-white"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p
+                  className={`text-sm font-medium ${
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }`}
+                >
+                  High Risk Cases
+                </p>
+                <p className="text-3xl font-bold text-red-600 mt-2">
+                  {highRiskAlerts}
+                </p>
+              </div>
+              <div className="text-4xl text-red-500">⚠️</div>
+            </div>
+          </div>
+
+          <div
+            className={`rounded-xl p-6 shadow-md border-l-4 border-yellow-500 hover:shadow-lg transition ${
+              theme === "dark" ? "bg-slate-800" : "bg-white"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p
+                  className={`text-sm font-medium ${
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }`}
+                >
+                  Unread Alerts
+                </p>
+                <p className="text-3xl font-bold text-yellow-600 mt-2">
+                  {unreadAlerts}
+                </p>
+              </div>
+              <div className="text-4xl text-yellow-500">📬</div>
+            </div>
+          </div>
+
+          <div
+            className={`rounded-xl p-6 shadow-md border-l-4 border-green-500 hover:shadow-lg transition ${
+              theme === "dark" ? "bg-slate-800" : "bg-white"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p
+                  className={`text-sm font-medium ${
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }`}
+                >
+                  Read Alerts
+                </p>
+                <p className="text-3xl font-bold text-green-600 mt-2">
+                  {alerts.filter((a) => a.read).length}
+                </p>
+              </div>
+              <div className="text-4xl text-green-500">✅</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div
+            className={`rounded-xl p-6 shadow-md hover:shadow-lg transition ${
+              theme === "dark" ? "bg-slate-800" : "bg-white"
+            }`}
+          >
+            <h3
+              className={`text-lg font-bold mb-4 flex items-center space-x-2 ${
+                theme === "dark" ? "text-white" : "text-slate-900"
+              }`}
+            >
+              <span>📊</span>
+              <span>Patient Gender Distribution</span>
+            </h3>
+            <div className="flex justify-center">
+              <div className="w-64 h-64">
+                <Pie data={patientPieData} />
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`rounded-xl p-6 shadow-md hover:shadow-lg transition ${
+              theme === "dark" ? "bg-slate-800" : "bg-white"
+            }`}
+          >
+            <h3
+              className={`text-lg font-bold mb-4 flex items-center space-x-2 ${
+                theme === "dark" ? "text-white" : "text-slate-900"
+              }`}
+            >
+              <span>📈</span>
+              <span>Appointments This Week</span>
+            </h3>
+            <div className="flex justify-center">
+              <div className="w-64 h-64">
+                <Bar data={appointmentsBarData} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Alerts Section */}
+        <div
+          className={`rounded-xl shadow-md overflow-hidden ${
+            theme === "dark" ? "bg-slate-800" : "bg-white"
+          }`}
+        >
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4">
+            <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+              <span>🚨</span>
+              <span>Patient Health Alerts</span>
+              {unreadAlerts > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  {unreadAlerts} New
+                </span>
+              )}
+            </h3>
+          </div>
+
+          <div className="p-6">
             {loadingAlerts && (
-              <div className="text-sm text-gray-500">Loading alerts...</div>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin text-4xl mb-3">
+                  ⏳
+                </div>
+                <p
+                  className={
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }
+                >
+                  Loading alerts...
+                </p>
+              </div>
             )}
+
             {!loadingAlerts && alerts.length === 0 && (
-              <div className="text-sm text-gray-500">No alerts.</div>
+              <div className="text-center py-12">
+                <div className="text-6xl mb-3">✨</div>
+                <p
+                  className={`font-medium ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}
+                >
+                  No alerts at this time
+                </p>
+                <p
+                  className={`text-sm mt-1 ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}
+                >
+                  All patients are in stable condition
+                </p>
+              </div>
             )}
+
             {!loadingAlerts && alerts.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {alerts.map((a) => (
                   <div
                     key={a._id}
-                    className={`p-3 border rounded ${
-                      a.read ? "bg-gray-50" : "bg-red-50"
+                    className={`rounded-lg border-2 p-5 transition ${
+                      a.read
+                        ? theme === "dark"
+                          ? "bg-slate-700 border-slate-600"
+                          : "bg-slate-50 border-slate-200"
+                        : theme === "dark"
+                          ? "bg-red-900/30 border-red-700 shadow-md"
+                          : "bg-red-50 border-red-300 shadow-md"
                     }`}
                   >
                     <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-semibold">{a.message}</div>
-                        {/* Risk badge */}
-                        <div className="mt-1">
-                          {a.prediction === 1 ? (
-                            <span className="inline-block px-2 py-0.5 text-xs bg-red-600 text-white rounded">
-                              High risk
-                            </span>
-                          ) : (
-                            <span className="inline-block px-2 py-0.5 text-xs bg-green-600 text-white rounded">
-                              Low risk
-                            </span>
-                          )}
+                      <div className="flex-1">
+                        {/* Alert Header */}
+                        <div className="flex items-start space-x-3 mb-3">
+                          <div className="text-2xl">
+                            {a.prediction === 1 ? "🔴" : "🟢"}
+                          </div>
+                          <div className="flex-1">
+                            <p
+                              className={`font-bold text-base ${
+                                theme === "dark"
+                                  ? "text-white"
+                                  : "text-slate-900"
+                              }`}
+                            >
+                              {a.message}
+                            </p>
+                            <div className="flex items-center space-x-2 mt-2">
+                              {a.prediction === 1 ? (
+                                <span className="inline-block px-3 py-1 text-xs font-bold bg-red-600 text-white rounded-full">
+                                  ⚠️ HIGH RISK
+                                </span>
+                              ) : (
+                                <span className="inline-block px-3 py-1 text-xs font-bold bg-green-600 text-white rounded-full">
+                                  ✓ LOW RISK
+                                </span>
+                              )}
+                              {!a.read && (
+                                <span className="inline-block px-3 py-1 text-xs font-bold bg-yellow-500 text-white rounded-full">
+                                  🔔 UNREAD
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          Patient:{" "}
-                          {a.patientSnapshot?.name ||
-                            a.patientSnapshot?.email ||
-                            a.patientSnapshot?.number ||
-                            a.patientId?.name ||
-                            a.patientId?.email ||
-                            "Unknown"}
+
+                        {/* Patient Info */}
+                        <div
+                          className={`rounded-lg p-3 mb-3 border ${
+                            theme === "dark"
+                              ? "bg-blue-900/30 border-blue-700"
+                              : "bg-blue-50 border-blue-200"
+                          }`}
+                        >
+                          <p
+                            className={`text-sm font-semibold mb-1 ${
+                              theme === "dark" ? "text-white" : "text-slate-900"
+                            }`}
+                          >
+                            👤 Patient:{" "}
+                            {a.patientSnapshot?.name ||
+                              a.patientSnapshot?.email ||
+                              a.patientSnapshot?.number ||
+                              a.patientId?.name ||
+                              a.patientId?.email ||
+                              "Unknown"}
+                          </p>
+                          <p
+                            className={`text-xs ${
+                              theme === "dark"
+                                ? "text-slate-300"
+                                : "text-slate-600"
+                            }`}
+                          >
+                            📱 {a.patientSnapshot?.number || "N/A"}
+                          </p>
                         </div>
+
+                        {/* Symptoms */}
                         {a.symptoms && a.symptoms.length > 0 && (
-                          <div className="text-sm text-gray-700 mt-1">
-                            Symptoms: {a.symptoms.join(", ")}
+                          <div className="mb-3">
+                            <p
+                              className={`text-sm font-semibold mb-2 ${
+                                theme === "dark"
+                                  ? "text-white"
+                                  : "text-slate-900"
+                              }`}
+                            >
+                              Symptoms:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {a.symptoms.map((symptom, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`inline-block px-3 py-1 text-xs rounded-full font-medium ${
+                                    theme === "dark"
+                                      ? "bg-purple-900/50 text-purple-300"
+                                      : "bg-purple-100 text-purple-700"
+                                  }`}
+                                >
+                                  {symptom}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         )}
-                        {/* Measurement details when available */}
+
+                        {/* Measurement Details */}
                         {a.measurementId &&
                           typeof a.measurementId === "object" && (
-                            <div className="text-sm text-gray-800 mt-2 p-2 bg-white border rounded">
-                              <div className="font-medium">Measurement</div>
-                              <div>
-                                Systolic: {a.measurementId.systolic ?? "-"}
-                              </div>
-                              <div>
-                                Diastolic: {a.measurementId.diastolic ?? "-"}
-                              </div>
-                              <div>
-                                Heart Rate: {a.measurementId.heartRate ?? "-"}
-                              </div>
-                              <div>
-                                Glucose: {a.measurementId.glucoseLevel ?? "-"}
-                              </div>
-                              <div>
-                                Temperature:{" "}
-                                {a.measurementId.temperature ?? "-"}
-                              </div>
-                              <div>
-                                SPO2: {a.measurementId.oxygenSaturation ?? "-"}
+                            <div
+                              className={`rounded-lg p-4 mb-3 border ${
+                                theme === "dark"
+                                  ? "bg-slate-700 border-slate-600"
+                                  : "bg-slate-100 border-slate-300"
+                              }`}
+                            >
+                              <p
+                                className={`text-sm font-bold mb-3 ${
+                                  theme === "dark"
+                                    ? "text-white"
+                                    : "text-slate-900"
+                                }`}
+                              >
+                                📊 Vital Signs
+                              </p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div
+                                  className={`px-3 py-2 rounded border ${
+                                    theme === "dark"
+                                      ? "bg-slate-800 border-slate-600"
+                                      : "bg-white border-slate-200"
+                                  }`}
+                                >
+                                  <p
+                                    className={`text-xs font-medium ${
+                                      theme === "dark"
+                                        ? "text-slate-300"
+                                        : "text-slate-600"
+                                    }`}
+                                  >
+                                    Systolic BP
+                                  </p>
+                                  <p
+                                    className={`text-lg font-bold ${
+                                      theme === "dark"
+                                        ? "text-white"
+                                        : "text-slate-900"
+                                    }`}
+                                  >
+                                    {a.measurementId.systolic ?? "-"}
+                                  </p>
+                                </div>
+                                <div
+                                  className={`px-3 py-2 rounded border ${
+                                    theme === "dark"
+                                      ? "bg-slate-800 border-slate-600"
+                                      : "bg-white border-slate-200"
+                                  }`}
+                                >
+                                  <p
+                                    className={`text-xs font-medium ${
+                                      theme === "dark"
+                                        ? "text-slate-300"
+                                        : "text-slate-600"
+                                    }`}
+                                  >
+                                    Diastolic BP
+                                  </p>
+                                  <p
+                                    className={`text-lg font-bold ${
+                                      theme === "dark"
+                                        ? "text-white"
+                                        : "text-slate-900"
+                                    }`}
+                                  >
+                                    {a.measurementId.diastolic ?? "-"}
+                                  </p>
+                                </div>
+                                <div
+                                  className={`px-3 py-2 rounded border ${
+                                    theme === "dark"
+                                      ? "bg-slate-800 border-slate-600"
+                                      : "bg-white border-slate-200"
+                                  }`}
+                                >
+                                  <p
+                                    className={`text-xs font-medium ${
+                                      theme === "dark"
+                                        ? "text-slate-300"
+                                        : "text-slate-600"
+                                    }`}
+                                  >
+                                    Heart Rate
+                                  </p>
+                                  <p
+                                    className={`text-lg font-bold ${
+                                      theme === "dark"
+                                        ? "text-white"
+                                        : "text-slate-900"
+                                    }`}
+                                  >
+                                    {a.measurementId.heartRate ?? "-"}
+                                  </p>
+                                </div>
+                                <div
+                                  className={`px-3 py-2 rounded border ${
+                                    theme === "dark"
+                                      ? "bg-slate-800 border-slate-600"
+                                      : "bg-white border-slate-200"
+                                  }`}
+                                >
+                                  <p
+                                    className={`text-xs font-medium ${
+                                      theme === "dark"
+                                        ? "text-slate-300"
+                                        : "text-slate-600"
+                                    }`}
+                                  >
+                                    Glucose
+                                  </p>
+                                  <p
+                                    className={`text-lg font-bold ${
+                                      theme === "dark"
+                                        ? "text-white"
+                                        : "text-slate-900"
+                                    }`}
+                                  >
+                                    {a.measurementId.glucoseLevel ?? "-"}
+                                  </p>
+                                </div>
+                                <div
+                                  className={`px-3 py-2 rounded border ${
+                                    theme === "dark"
+                                      ? "bg-slate-800 border-slate-600"
+                                      : "bg-white border-slate-200"
+                                  }`}
+                                >
+                                  <p
+                                    className={`text-xs font-medium ${
+                                      theme === "dark"
+                                        ? "text-slate-300"
+                                        : "text-slate-600"
+                                    }`}
+                                  >
+                                    Temperature
+                                  </p>
+                                  <p
+                                    className={`text-lg font-bold ${
+                                      theme === "dark"
+                                        ? "text-white"
+                                        : "text-slate-900"
+                                    }`}
+                                  >
+                                    {a.measurementId.temperature ?? "-"}
+                                  </p>
+                                </div>
+                                <div
+                                  className={`px-3 py-2 rounded border ${
+                                    theme === "dark"
+                                      ? "bg-slate-800 border-slate-600"
+                                      : "bg-white border-slate-200"
+                                  }`}
+                                >
+                                  <p
+                                    className={`text-xs font-medium ${
+                                      theme === "dark"
+                                        ? "text-slate-300"
+                                        : "text-slate-600"
+                                    }`}
+                                  >
+                                    SpO2
+                                  </p>
+                                  <p
+                                    className={`text-lg font-bold ${
+                                      theme === "dark"
+                                        ? "text-white"
+                                        : "text-slate-900"
+                                    }`}
+                                  >
+                                    {a.measurementId.oxygenSaturation ?? "-"}
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           )}
-                        <div className="text-xs text-gray-500 mt-1">
-                          {new Date(a.createdAt).toLocaleString()}
-                        </div>
+
+                        {/* Timestamp */}
+                        <p
+                          className={`text-xs ${
+                            theme === "dark"
+                              ? "text-slate-400"
+                              : "text-slate-500"
+                          }`}
+                        >
+                          ⏰ {new Date(a.createdAt).toLocaleString()}
+                        </p>
                       </div>
-                      <div className="flex flex-col items-end">
+
+                      {/* Action Button */}
+                      <div className="ml-4">
                         {!a.read ? (
                           <button
                             onClick={() => markAsRead(a._id)}
-                            className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold text-sm hover:shadow-lg transition transform hover:-translate-y-0.5 whitespace-nowrap"
                           >
-                            Mark read
+                            Mark as Read
                           </button>
                         ) : (
-                          <span className="text-sm text-gray-500">Read</span>
+                          <span
+                            className={`text-sm font-medium px-4 py-2 ${
+                              theme === "dark"
+                                ? "text-slate-400"
+                                : "text-slate-500"
+                            }`}
+                          >
+                            ✓ Read
+                          </span>
                         )}
                       </div>
                     </div>
