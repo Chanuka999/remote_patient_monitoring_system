@@ -1,9 +1,11 @@
 import axios from "axios";
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 const Login = () => {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -13,135 +15,222 @@ const Login = () => {
     e.preventDefault();
     const API_BASE =
       import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
     try {
       const response = await axios.post(`${API_BASE}/login`, {
         email,
         password,
       });
 
-      // server may return { success, data, token } where data is the user
       const { token, data } = response.data || {};
       const user = data || response.data?.user || null;
+
       if (token) localStorage.setItem("token", token);
+
       if (user) {
-        // ensure symptoms are preserved
-        const toSave = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          symptoms: user.symptoms || [],
-        };
-        localStorage.setItem("user", JSON.stringify(toSave));
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            symptoms: user.symptoms || [],
+          }),
+        );
       }
+
       setError("");
 
-      if (user?.role === "patient") {
-        navigate("/patientDashboard");
-      } else if (user?.role === "doctor") {
-        navigate("/doctorDashboard");
-      } else if (user?.role === "admin") {
-        navigate("/adminDashboard");
-      }
-    } catch (error) {
+      if (user?.role === "patient") navigate("/patientDashboard");
+      else if (user?.role === "doctor") navigate("/doctorDashboard");
+      else if (user?.role === "admin") navigate("/adminDashboard");
+    } catch (requestError) {
       console.error(
         "login error",
-        error?.response?.data || error.message || error
+        requestError?.response?.data || requestError.message || requestError,
       );
       setError(
-        error.response?.data?.message || "Login failed. Please try again."
+        requestError.response?.data?.message ||
+          "Login failed. Please try again.",
       );
     }
   };
 
   return (
-    <div className="w-full h-screen bg-[url('loginBg.png')] bg-cover bg-center flex font-sans">
-      <div className="w-[50%] h-full bg-gradient-to-br flex flex-col justify-center items-center relative overflow-hidden">
-        <img
-          src="/logo.png"
-          alt="RPM Logo"
-          className="w-48 h-auto mb-6 animate-pulse opacity-90"
-        />
-        <h1 className="text-4xl font-bold text-white tracking-tight">
-          Remote patient monitoring system
-        </h1>
-        <p className="text-lg text-amber-100 mt-4 max-w-md text-center">
-          The digital pathway platform for healthcare providers that turns
-          repetitive clinical tasks into intelligent, scalable workflows, proven
-          to boost productivity, capacity, and patient flow.
-        </p>
-        {/* Decorative Elements */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="w-64 h-64 bg-[var(--color-accent)]/30 rounded-full absolute -top-32 -left-32"></div>
-          <div className="w-80 h-80 bg-[var(--color-primary)]/30 rounded-full absolute bottom-0 right-0"></div>
-        </div>
-      </div>
-      <div className="w-[50%] h-full flex justify-center items-center">
-        <div className="w-[500px] p-8 backdrop-blur-xl bg-white/30 shadow-2xl rounded-2xl flex flex-col justify-center items-center gap-6 border border-[var(--color-primary)]/50">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <h2 className="text-3xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-              Login Your Account
-            </h2>
-
-            <div className="flex flex-col space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-white">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
-                placeholder="Enter your email"
-                required
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col space-y-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-white"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                className="border border-indigo-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-purple-400 transition duration-200 bg-indigo-50 placeholder-gray-400"
-                placeholder="Enter your password"
-                required
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
+    <div
+      className={`min-h-screen transition-colors duration-300 ${
+        isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"
+      }`}
+    >
+      <div className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-10">
+        <section
+          className={`relative overflow-hidden rounded-[28px] border p-8 md:p-10 ${
+            isDark
+              ? "border-slate-800 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_24%),linear-gradient(135deg,#020617,#0f172a_55%,#082f49)]"
+              : "border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.14),_transparent_24%),linear-gradient(135deg,#ffffff,#e0f2fe_55%,#f8fafc)]"
+          }`}
+        >
+          <div className="relative z-10 flex h-full flex-col justify-between gap-8">
             <div>
+              <div className="flex items-center gap-4">
+                <img
+                  src="/logo.png"
+                  alt="HealthLink logo"
+                  className="h-14 w-auto"
+                />
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-500">
+                    HealthLink
+                  </p>
+                  <h1 className="text-3xl font-black sm:text-4xl">
+                    Sign in to your care workspace.
+                  </h1>
+                </div>
+              </div>
+              <p
+                className={`mt-6 max-w-xl text-base leading-8 ${
+                  isDark ? "text-slate-300" : "text-slate-600"
+                }`}
+              >
+                Access patient monitoring, appointment coordination, symptom
+                tracking, and doctor communication from a single dashboard.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div
+                className={`rounded-2xl p-4 ${isDark ? "bg-white/5" : "bg-white/80"}`}
+              >
+                <p className="text-2xl font-bold">Fast</p>
+                <p className={isDark ? "text-slate-300" : "text-slate-600"}>
+                  login and role-based access
+                </p>
+              </div>
+              <div
+                className={`rounded-2xl p-4 ${isDark ? "bg-white/5" : "bg-white/80"}`}
+              >
+                <p className="text-2xl font-bold">Clear</p>
+                <p className={isDark ? "text-slate-300" : "text-slate-600"}>
+                  alerts and patient context
+                </p>
+              </div>
+              <div
+                className={`rounded-2xl p-4 ${isDark ? "bg-white/5" : "bg-white/80"}`}
+              >
+                <p className="text-2xl font-bold">Connected</p>
+                <p className={isDark ? "text-slate-300" : "text-slate-600"}>
+                  appointments and messaging
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="pointer-events-none absolute -right-16 top-8 h-40 w-40 rounded-full bg-sky-400/20 blur-3xl"></div>
+          <div className="pointer-events-none absolute -bottom-16 left-0 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl"></div>
+        </section>
+
+        <section className="flex items-center justify-center">
+          <div
+            className={`w-full max-w-xl rounded-[28px] border p-6 shadow-2xl md:p-8 ${
+              isDark
+                ? "border-slate-800 bg-slate-900 shadow-slate-950/40"
+                : "border-slate-200 bg-white shadow-slate-200/80"
+            }`}
+          >
+            <div className="mb-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-500">
+                Welcome Back
+              </p>
+              <h2 className="mt-2 text-3xl font-black">
+                Login to your account
+              </h2>
+              <p
+                className={`mt-3 text-sm leading-7 ${isDark ? "text-slate-400" : "text-slate-600"}`}
+              >
+                Use your registered email and password to continue.
+              </p>
+            </div>
+
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              <div className="space-y-2">
+                <label
+                  htmlFor="email"
+                  className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}
+                >
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  placeholder="you@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-sky-500"
+                      : "border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-sky-500"
+                  }`}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="password"
+                  className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}
+                >
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  placeholder="Enter your password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-sky-500"
+                      : "border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-sky-500"
+                  }`}
+                />
+              </div>
+
+              {error && (
+                <div
+                  className={`rounded-2xl border px-4 py-3 text-sm ${
+                    isDark
+                      ? "border-red-900 bg-red-950/50 text-red-300"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {error}
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200 transform hover:scale-105"
+                className="w-full rounded-2xl bg-sky-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-600"
               >
                 Login
               </button>
-            </div>
-          </form>
+            </form>
 
-          {error && (
-            <div className="mt-4 text-center text-sm text-red-600">{error}</div>
-          )}
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-white">
-              Don't have an account?{" "}
+            <div
+              className={`mt-6 rounded-2xl px-4 py-4 text-sm ${isDark ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600"}`}
+            >
+              New here?{" "}
               <Link
                 to="/register"
-                className="text-black font-medium transition duration-200 underline"
+                className="font-semibold text-sky-500 hover:text-sky-600"
               >
-                Register
+                Create an account
               </Link>
-            </p>
+            </div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
