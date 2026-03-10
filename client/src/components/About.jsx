@@ -1,13 +1,27 @@
 import React from "react";
+import { useTheme } from "../context/ThemeContext";
 
 function Header() {
+  const { theme } = useTheme();
   return (
-    <header className=" bg-gray-200 py-16 shadow-lg">
+    <header
+      className={`py-16 shadow-lg transition-colors duration-300 ${
+        theme === "dark" ? "bg-slate-800" : "bg-gray-200"
+      }`}
+    >
       <div className="container mx-auto px-6 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg">
+        <h1
+          className={`text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg ${
+            theme === "dark" ? "text-blue-400" : "text-gray-900"
+          }`}
+        >
           About Remote Patient Monitoring System
         </h1>
-        <p className="mt-4 text-lg md:text-xl text-black max-w-2xl mx-auto">
+        <p
+          className={`mt-4 text-lg md:text-xl max-w-2xl mx-auto ${
+            theme === "dark" ? "text-gray-300" : "text-black"
+          }`}
+        >
           Empowering Chronic Disease Management with Cutting-Edge Technology
         </p>
       </div>
@@ -23,9 +37,22 @@ function Section({
   videoUrl,
   videoPoster,
 }) {
+  const { theme } = useTheme();
   return (
-    <section className="py-16 px-6 bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="container mx-auto flex flex-col md:flex-row items-center gap-10 p-6 rounded-2xl shadow-lg bg-white bg-opacity-90 backdrop-blur-md border border-gray-200 hover:shadow-2xl transition-shadow duration-500">
+    <section
+      className={`py-16 px-6 transition-colors duration-300 ${
+        theme === "dark"
+          ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+          : "bg-gradient-to-br from-gray-50 via-white to-gray-100"
+      }`}
+    >
+      <div
+        className={`container mx-auto flex flex-col md:flex-row items-center gap-10 p-6 rounded-2xl shadow-lg backdrop-blur-md border hover:shadow-2xl transition-shadow duration-500 ${
+          theme === "dark"
+            ? "bg-slate-800/90 border-slate-700"
+            : "bg-white bg-opacity-90 border-gray-200"
+        }`}
+      >
         {videoUrl ? (
           <div className="md:w-1/2 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-500">
             <video
