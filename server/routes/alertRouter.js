@@ -4,6 +4,7 @@ import {
   markAlertRead,
   markAlertUnread,
   getAlertById,
+  createEmergencySOS,
 } from "../controllers/alertController.js";
 
 const router = express.Router();
@@ -19,5 +20,8 @@ router.patch("/alerts/:id/read", markAlertRead);
 
 // PATCH /api/alerts/:id/unread - mark unread
 router.patch("/alerts/:id/unread", markAlertUnread);
+
+// POST /api/alerts/emergency - patient emergency SOS
+router.post("/alerts/emergency", createEmergencySOS);
 
 export default router;
