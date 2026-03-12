@@ -10,13 +10,22 @@ const Chat = () => {
   const [showChatbot, setShowChatbot] = useState(false);
   const chatBodyRef = useRef();
 
+  const typewriterLines = (fullText, onUpdate, onDone) => {
+    const lines = fullText.split("\n");
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx++;
+      const partial = lines.slice(0, idx).join("\n");
+      const done = idx >= lines.length;
+      onUpdate(partial, !done);
+      if (done) {
+        clearInterval(interval);
+        onDone();
+      }
+    }, 120);
+  };
+
   const generateBotResponce = async (history) => {
-    const updateHistory = (text) => {
-      setChatHistory((prev) => [
-        ...prev.filter((msg) => msg.text !== "Thinking..."),
-        { role: "model", text },
-      ]);
-    };
     history = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
     const requestOptions = {
       method: "POST",
@@ -24,19 +33,53 @@ const Chat = () => {
       body: JSON.stringify({ contents: history }),
     };
     try {
-      // Prefer a safe server-side proxy endpoint. The server proxy should be configured
-      // with the actual third-party API URL and API key via environment variables.
       const serverChatEndpoint = `/api/chat`;
       const responce = await fetch(serverChatEndpoint, requestOptions);
       const data = await responce.json();
       if (!responce.ok)
-        throw new Error(data.error.message || "something went wrong!");
-      const apiresponceText = data.candidates[0].content.parts[0].text
+        throw new Error(data?.error?.message || "something went wrong!");
+      const fullText = data.candidates[0].content.parts[0].text
         .replace(/\*\*(.*?)\*\*/g, "$1")
         .trim();
-      updateHistory(apiresponceText);
+
+      // Swap "Thinking..." for an empty typing message, then animate line by line
+      setChatHistory((prev) => [
+        ...prev.filter((msg) => msg.text !== "Thinking..."),
+        { role: "model", text: "", typing: true },
+      ]);
+
+      typewriterLines(
+        fullText,
+        (partial, isTyping) => {
+          setChatHistory((prev) => {
+            const updated = [...prev];
+            const last = updated.length - 1;
+            if (updated[last]?.role === "model") {
+              updated[last] = {
+                role: "model",
+                text: partial,
+                typing: isTyping,
+              };
+            }
+            return updated;
+          });
+        },
+        () => {
+          setChatHistory((prev) => {
+            const updated = [...prev];
+            const last = updated.length - 1;
+            if (updated[last]?.role === "model") {
+              updated[last] = { ...updated[last], typing: false };
+            }
+            return updated;
+          });
+        },
+      );
     } catch (error) {
-      updateHistory(error.message, true);
+      setChatHistory((prev) => [
+        ...prev.filter((msg) => msg.text !== "Thinking..."),
+        { role: "model", text: error.message, typing: false },
+      ]);
     }
   };
 
@@ -62,7 +105,7 @@ const Chat = () => {
         <div className="chat-header">
           <div className="header-info">
             <ChatbotIcon />
-            <h2 className="logo-text">Chatbot</h2>
+            <h2 className="logo-text">HealthLink Assistant</h2>
           </div>
           <button
             onClick={() => setShowChatbot((prev) => !prev)}
@@ -75,7 +118,8 @@ const Chat = () => {
           <div className="message bot-message">
             <ChatbotIcon />
             <p className="message-text">
-              Hey there <br /> How can I help you today?
+              Hello! I am HealthLink, your healthcare assistant. <br />
+              Ask me about symptoms, health readings, doctors, or appointments.
             </p>
           </div>
 
