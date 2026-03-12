@@ -12,6 +12,7 @@ import {
 } from "chart.js";
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import Chat from "../Chat";
 
 ChartJS.register(
   CategoryScale,
@@ -1316,6 +1317,7 @@ const PatientDashboard = () => {
           </div>
         </main>
       </div>
+      <Chat />
     </div>
   );
 };

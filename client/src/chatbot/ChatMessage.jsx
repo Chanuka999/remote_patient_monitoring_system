@@ -7,7 +7,10 @@ const ChatMessage = ({ chat }) => {
       className={`message ${chat.role === "model" ? "bot" : "user"}-message`}
     >
       {chat.role === "model" && <ChatbotIcon />}
-      <p className="message-text">{chat.text}</p>
+      <p className="message-text">
+        {chat.text}
+        {chat.typing && <span className="typing-cursor" />}
+      </p>
     </div>
   );
 };

@@ -10,13 +10,18 @@ import Alert from "../model/Alert.js";
 import { getIo } from "../lib/socket.js";
 import Measurement from "../model/Measurement.js";
 import Prediction from "../model/Prediction.js";
+import {
+  buildContextualResponse,
+  buildSystemPrompt,
+  buildChatbotKnowledgeBase,
+} from "./chatbotTrainingController.js";
 
 // Helper to fetch with retries on 429/503 transient responses
 const fetchWithRetry = async (
   url,
   options = {},
   retries = 3,
-  backoffMs = 300
+  backoffMs = 300,
 ) => {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -79,8 +84,8 @@ const createAlertsForRisk = async ({
       patient && Array.isArray(patient.symptoms) && patient.symptoms.length
         ? patient.symptoms
         : Array.isArray(reqBody.symptoms) && reqBody.symptoms.length
-        ? reqBody.symptoms
-        : deriveSymptomsFromFeatures(features);
+          ? reqBody.symptoms
+          : deriveSymptomsFromFeatures(features);
 
     // If we couldn't derive any explicit symptoms, still notify doctors
     // Find doctors with overlapping symptoms when available, otherwise
@@ -126,7 +131,7 @@ const createAlertsForRisk = async ({
     const created = await Alert.insertMany(alerts);
     console.log(
       `Created ${created.length} alert(s) for doctors`,
-      doctors.map((d) => d._id)
+      doctors.map((d) => d._id),
     );
 
     // emit socket.io events to each doctor room (doctor id used as room)
@@ -140,7 +145,7 @@ const createAlertsForRisk = async ({
               "emitting alert to room",
               docRoom,
               "alertId",
-              al._id?.toString()
+              al._id?.toString(),
             );
             io.to(docRoom).emit("alert", al);
           } catch (e) {
@@ -253,7 +258,7 @@ export const predict = async (req, res) => {
         body: JSON.stringify(req.body),
       },
       3,
-      300
+      300,
     );
 
     const text = await mlRes.text();
@@ -342,7 +347,7 @@ export const predict = async (req, res) => {
       } catch (saveErr) {
         console.error(
           "failed to save measurement before creating alerts",
-          saveErr
+          saveErr,
         );
         // still attempt to create alerts without measurement
         await createAlertsForRisk({
@@ -411,13 +416,13 @@ export const predict = async (req, res) => {
         } catch (predErr) {
           console.error(
             "failed to save prediction in proxy-error fallback",
-            predErr
+            predErr,
           );
         }
       } catch (persistErr) {
         console.error(
           "failed to persist measurement/prediction in proxy-error fallback",
-          persistErr
+          persistErr,
         );
       }
 
@@ -500,7 +505,7 @@ export const predictHeartFromForm = async (req, res) => {
         } catch (predErr) {
           console.error(
             "failed to save prediction (heart_from_form fallback)",
-            predErr
+            predErr,
           );
         }
 
@@ -515,7 +520,7 @@ export const predictHeartFromForm = async (req, res) => {
       } catch (persistErr) {
         console.error(
           "failed to save measurement (heart_from_form fallback)",
-          persistErr
+          persistErr,
         );
       }
 
@@ -538,7 +543,7 @@ export const predictHeartFromForm = async (req, res) => {
         body: JSON.stringify(req.body),
       },
       3,
-      300
+      300,
     );
 
     const text = await mlRes.text();
@@ -608,13 +613,13 @@ export const predictHeartFromForm = async (req, res) => {
       } catch (predErr) {
         console.error(
           "failed to save prediction (heart_from_form ml)",
-          predErr
+          predErr,
         );
       }
     } catch (persistErr) {
       console.error(
         "failed to persist measurement/prediction (heart_from_form ml)",
-        persistErr
+        persistErr,
       );
     }
 
@@ -650,7 +655,7 @@ export const predictHeartFromForm = async (req, res) => {
     } catch (fallbackErr) {
       console.error(
         "/api/predict/heart_from_form fallback failed",
-        fallbackErr
+        fallbackErr,
       );
       return res.status(502).json({
         success: false,
@@ -696,7 +701,7 @@ export const predictFromSymptoms = async (req, res) => {
             body: JSON.stringify(body),
           },
           3,
-          300
+          300,
         );
 
         const text = await mlRes.text();
@@ -794,23 +799,113 @@ export const predictFromSymptoms = async (req, res) => {
 };
 
 export const chat = async (req, res) => {
+  // Full conversation history from client
+  const conversationHistory = req.body?.contents || [];
+
+  // Extract the latest user message text
+  const latestUserMessage =
+    conversationHistory
+      .filter((item) => item?.role === "user")
+      .flatMap((item) => item?.parts || [])
+      .map((part) => part?.text)
+      .filter(Boolean)
+      .at(-1) || "";
+
+  const fallbackResponse = (message) => ({
+    candidates: [
+      {
+        content: {
+          parts: [{ text: message }],
+        },
+      },
+    ],
+    fallback: true,
+  });
+
+  const extractUpstreamMessage = (rawText) => {
+    try {
+      const parsed = JSON.parse(rawText);
+      return parsed?.error?.message || rawText;
+    } catch {
+      return rawText;
+    }
+  };
+
+  const configuredUrl = process.env.API_CHAT_URL || process.env.VITE_API_URL;
+  const configuredKey =
+    process.env.API_CHAT_KEY ||
+    process.env.CHAT_API_KEY ||
+    process.env.GEMINI_API_KEY;
+  const defaultGeminiUrl =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+  const looksLikeUrl = (value) =>
+    typeof value === "string" && /^https?:\/\//i.test(value.trim());
+
+  const normalizeGeminiUrl = (value) => {
+    if (!looksLikeUrl(value)) return null;
+    const url = new URL(value.trim());
+    if (!url.searchParams.get("key") && configuredKey) {
+      url.searchParams.set("key", configuredKey);
+    }
+    return url.toString();
+  };
+
+  const resolvedChatUrl = configuredKey
+    ? `${defaultGeminiUrl}?key=${encodeURIComponent(configuredKey.trim())}`
+    : looksLikeUrl(configuredUrl)
+      ? normalizeGeminiUrl(configuredUrl)
+      : null;
+
   try {
-    const CHAT_API = process.env.API_CHAT_URL || process.env.VITE_API_URL;
-    if (!CHAT_API)
-      return res.status(400).json({
-        error:
-          "Chat API not configured on server. Set API_CHAT_URL (or VITE_API_URL) and/or API_CHAT_KEY in the server environment. Do not store keys in client/.env.",
-      });
+    if (!resolvedChatUrl) {
+      // No API key configured — use local DB-trained response with conversation history
+      const contextualReply = await buildContextualResponse(
+        latestUserMessage,
+        conversationHistory,
+      );
+      return res.status(200).json(fallbackResponse(contextualReply));
+    }
+
+    // Build knowledge base and inject system prompt into the Gemini request
+    let geminiBody = { ...req.body };
+    try {
+      const knowledgeBase = await buildChatbotKnowledgeBase();
+      const systemPromptText = buildSystemPrompt(knowledgeBase);
+      // Gemini 2.0 supports systemInstruction at the top level
+      geminiBody = {
+        systemInstruction: {
+          parts: [{ text: systemPromptText }],
+        },
+        contents: conversationHistory,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        },
+      };
+    } catch (kbErr) {
+      console.warn("Could not build system prompt for Gemini:", kbErr.message);
+    }
 
     const headers = { "Content-Type": "application/json" };
-    const apiKey = process.env.API_CHAT_KEY || process.env.CHAT_API_KEY;
-    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
 
-    const r = await fetch(CHAT_API, {
+    const r = await fetch(resolvedChatUrl, {
       method: "POST",
       headers,
-      body: JSON.stringify(req.body),
+      body: JSON.stringify(geminiBody),
     });
+
+    if (!r.ok) {
+      const errorText = await r.text();
+      console.error("/api/chat upstream error", r.status, errorText);
+      // Fall back to local DB-aware response
+      const contextualReply = await buildContextualResponse(
+        latestUserMessage,
+        conversationHistory,
+      );
+      return res.status(200).json(fallbackResponse(contextualReply));
+    }
+
     const text = await r.text();
     try {
       const json = JSON.parse(text);
@@ -820,6 +915,10 @@ export const chat = async (req, res) => {
     }
   } catch (err) {
     console.error("/api/chat error", err);
-    return res.status(502).json({ error: String(err) });
+    const contextualReply = await buildContextualResponse(
+      latestUserMessage,
+      conversationHistory,
+    );
+    return res.status(200).json(fallbackResponse(contextualReply));
   }
 };

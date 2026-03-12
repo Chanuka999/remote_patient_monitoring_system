@@ -13,6 +13,7 @@ import debugRouter from "./routes/debugRouter.js";
 import messageRouter from "./routes/messageRouter.js";
 import appointmentRouter from "./routes/appointmentRouter.js";
 import hospitalRouter from "./routes/hospitalRouter.js";
+import chatbotRouter from "./routes/chatbotRouter.js";
 
 import { connectDb } from "./lib/db.js";
 import { ML_HOST, ML_PORT } from "./lib/utils.js";
@@ -51,6 +52,7 @@ app.use("/api", alertRouter);
 app.use("/api", hospitalRouter);
 app.use("/api", messageRouter);
 app.use("/api/appointments", appointmentRouter);
+app.use("/api/chatbot", chatbotRouter);
 app.use("/api/debug", debugRouter);
 
 // User routes (register/login) are mounted at root in current client expectations

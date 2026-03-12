@@ -46,14 +46,25 @@ const Login = () => {
       else if (user?.role === "doctor") navigate("/doctorDashboard");
       else if (user?.role === "admin") navigate("/adminDashboard");
     } catch (requestError) {
-      console.error(
-        "login error",
-        requestError?.response?.data || requestError.message || requestError,
-      );
-      setError(
-        requestError.response?.data?.message ||
-          "Login failed. Please try again.",
-      );
+      let errorMessage = "Login failed. Please try again.";
+
+      if (requestError?.response?.data?.message) {
+        errorMessage = requestError.response.data.message;
+      } else if (requestError?.response?.data?.error) {
+        errorMessage = requestError.response.data.error;
+      } else if (requestError?.message) {
+        errorMessage = requestError.message;
+      } else if (requestError?.response?.status) {
+        errorMessage = `Server error: ${requestError.response.status}. Please try again.`;
+      }
+
+      console.error("Login error:", {
+        status: requestError?.response?.status,
+        message: errorMessage,
+        details: requestError?.response?.data,
+      });
+
+      setError(errorMessage);
     }
   };
 
