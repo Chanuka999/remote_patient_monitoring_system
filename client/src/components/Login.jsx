@@ -73,6 +73,12 @@ const Login = () => {
       className={`min-h-screen transition-colors duration-300 ${
         isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"
       }`}
+      style={{
+        backgroundImage: 'url("/bg-login.jpg")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
     >
       <div className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-10">
         <section

@@ -14,6 +14,7 @@ import Login from "./components/Login";
 import PatientDashboardForm from "./components/PatientDashboardForm";
 import PatientDashboard from "./components/PatientDashboard";
 import DoctorDashboard from "./components/DoctorDashboard";
+import AdminDashboard from "./components/AdminDashboard";
 import Appointment from "./components/Appointment";
 import BookAppointment from "./components/BookAppointment";
 import Sympthoms from "./components/Sympthoms";
@@ -25,6 +26,7 @@ import HypertensionForm from "./components/Sympthoms/HypertentionForm";
 import Chat from "./Chat";
 import Contact from "./pages/Contact";
 import Hospital from "./pages/HospitalCare";
+import Doctors from "./pages/Doctors";
 import Messages from "./components/Messages";
 import Settings from "./components/Settings";
 function App() {
@@ -34,11 +36,13 @@ function App() {
         <Route index element={<Home />} />
         <Route path="about" element={<About />} />
         <Route path="hospital" element={<Hospital />} />
+        <Route path="doctor" element={<Doctors />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="patientDashboardForm" element={<PatientDashboardForm />} />
         <Route path="patientDashboard" element={<PatientDashboard />} />
         <Route path="doctorDashboard" element={<DoctorDashboard />} />
+        <Route path="adminDashboard" element={<AdminDashboard />} />
         <Route path="appointment" element={<Appointment />} />
         <Route path="book-appointment" element={<BookAppointment />} />
         <Route path="Sympthoms" element={<Sympthoms />} />

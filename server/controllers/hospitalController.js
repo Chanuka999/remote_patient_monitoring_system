@@ -33,11 +33,13 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
 // ── OpenStreetMap Overpass fallback — returns hospital array, never throws ─
 
 const queryOSM = async (lat, lng, radius) => {
+  // Single nwr query is far more efficient than 6 separate node/way queries
+  // and avoids Overpass returning a truncated (empty-JSON) response.
   const query =
-    `[out:json][timeout:20];` +
-    `(node["amenity"="hospital"](around:${radius},${lat},${lng});` +
-    `way["amenity"="hospital"](around:${radius},${lat},${lng}););` +
-    `out center 12;`;
+    `[out:json][timeout:25];` +
+    `nwr["amenity"~"^(hospital|clinic|health_centre)$"]` +
+    `(around:${radius},${lat},${lng});` +
+    `out center 15;`;
 
   try {
     // POST avoids URL-length issues and is more reliable than GET

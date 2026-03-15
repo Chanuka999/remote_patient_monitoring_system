@@ -81,18 +81,53 @@ const Settings = () => {
       return;
     }
 
-    // Load user profile data
-    setProfileData({
-      name: user.name || "",
-      email: user.email || "",
-      number: user.number || "",
-      address: user.address || "",
-      dateOfBirth: user.dateOfBirth || "",
-      gender: user.gender || "",
-    });
+    // Fetch fresh profile data from DB
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${apiBase}/api/users/me`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const result = await response.json();
+        if (result.success && result.data) {
+          const d = result.data;
+          setProfileData({
+            name: d.name || "",
+            email: d.email || "",
+            number: d.number || "",
+            address: d.address || "",
+            dateOfBirth: d.dateOfBirth || "",
+            gender: d.gender || "",
+          });
+          // keep localStorage in sync
+          localStorage.setItem("user", JSON.stringify({ ...user, ...d }));
+        } else {
+          // Fall back to localStorage values if API fails
+          setProfileData({
+            name: user.name || "",
+            email: user.email || "",
+            number: user.number || "",
+            address: user.address || "",
+            dateOfBirth: user.dateOfBirth || "",
+            gender: user.gender || "",
+          });
+        }
+      } catch {
+        setProfileData({
+          name: user.name || "",
+          email: user.email || "",
+          number: user.number || "",
+          address: user.address || "",
+          dateOfBirth: user.dateOfBirth || "",
+          gender: user.gender || "",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setLoading(false);
-  }, [navigate]);
+    fetchProfile();
+  }, [navigate, apiBase]);
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -101,10 +136,13 @@ const Settings = () => {
     setErrorMessage("");
 
     try {
-      const userId = currentUser.id || currentUser._id;
-      const response = await fetch(`${apiBase}/api/users/${userId}`, {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${apiBase}/api/users/me`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(profileData),
       });
 
@@ -112,10 +150,22 @@ const Settings = () => {
 
       if (result.success) {
         setSuccessMessage("Profile updated successfully!");
-        // Update localStorage
-        const updatedUser = { ...currentUser, ...profileData };
+        // Update localStorage with server-confirmed values
+        const serverData = result.data || profileData;
+        const updatedUser = { ...currentUser, ...serverData };
         localStorage.setItem("user", JSON.stringify(updatedUser));
         setCurrentUser(updatedUser);
+        if (result.data) {
+          const d = result.data;
+          setProfileData({
+            name: d.name || "",
+            email: d.email || "",
+            number: d.number || "",
+            address: d.address || "",
+            dateOfBirth: d.dateOfBirth || "",
+            gender: d.gender || "",
+          });
+        }
       } else {
         setErrorMessage(result.message || "Failed to update profile");
       }
