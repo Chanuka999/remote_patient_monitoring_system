@@ -1,8 +1,14 @@
 import React, { useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useTheme } from "../context/ThemeContext";
+
+const HIDE_NAV_PATHS = [
+  "/patientDashboard",
+  "/doctorDashboard",
+  "/adminDashboard",
+];
 
 const DEFAULTS = {
   dark: {
@@ -30,6 +36,8 @@ const applyThemeVars = (theme) => {
 
 const RootLayout = () => {
   const { theme } = useTheme();
+  const location = useLocation();
+  const hideNav = HIDE_NAV_PATHS.includes(location.pathname);
 
   useEffect(() => {
     applyThemeVars(theme);
@@ -43,13 +51,13 @@ const RootLayout = () => {
           : "bg-gray-50 text-gray-900"
       }`}
     >
-      <Navbar />
+      {!hideNav && <Navbar />}
       <main className="w-full">
         <div className="max-w-full mx-auto px-0 sm:px-0 lg:px-0">
           <Outlet />
         </div>
       </main>
-      <Footer />
+      {!hideNav && <Footer />}
     </div>
   );
 };

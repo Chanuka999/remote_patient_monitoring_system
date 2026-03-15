@@ -57,6 +57,12 @@ const Register = () => {
       className={`min-h-screen transition-colors duration-300 ${
         isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"
       }`}
+      style={{
+        backgroundImage: 'url("/bg-login.jpg")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
     >
       <div className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-10">
         <section className="flex items-center justify-center order-2 lg:order-1">
