@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Line, Pie, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -69,13 +69,27 @@ const DoctorDashboard = () => {
   const { theme } = useTheme();
   const [doctor, setDoctor] = useState(null);
   const [alerts, setAlerts] = useState([]);
+  const [teamDoctors, setTeamDoctors] = useState([]);
+  const [loadingTeam, setLoadingTeam] = useState(false);
+  const [teamError, setTeamError] = useState("");
+  const [showTeam, setShowTeam] = useState(false);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const displayName = doctor?.name?.trim() || "Doctor";
+  const teamSectionRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
         const token = localStorage.getItem("token");
+
+        // Immediate fallback so UI shows logged user even before API returns
+        try {
+          const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+          if (storedUser?.name) setDoctor((prev) => prev || storedUser);
+        } catch {
+          // ignore invalid localStorage JSON
+        }
 
         // Load doctor account details
         try {
@@ -104,6 +118,32 @@ const DoctorDashboard = () => {
         } catch {
           // ignore
         }
+
+        // Load all doctors for Team section
+        setLoadingTeam(true);
+        try {
+          const r3 = await fetch(`${API_BASE}/api/doctors`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (r3.ok) {
+            const json = await r3.json();
+            if (json?.success && Array.isArray(json.data)) {
+              setTeamDoctors(json.data);
+              setTeamError("");
+            } else {
+              setTeamDoctors([]);
+              setTeamError("Unable to load team doctors.");
+            }
+          } else {
+            setTeamDoctors([]);
+            setTeamError("Unable to load team doctors.");
+          }
+        } catch {
+          setTeamDoctors([]);
+          setTeamError("Unable to load team doctors.");
+        } finally {
+          setLoadingTeam(false);
+        }
       } finally {
         setLoadingAlerts(false);
       }
@@ -114,7 +154,8 @@ const DoctorDashboard = () => {
 
   // realtime socket: join doctor's room and receive alerts
   useEffect(() => {
-    if (!doctor?.id) return;
+    const doctorId = doctor?.id || doctor?._id;
+    if (!doctorId) return;
     const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
     const socket = ioClient(API_BASE || undefined);
     socket.on("connect", () => {
@@ -123,9 +164,9 @@ const DoctorDashboard = () => {
           "socket connected (client)",
           socket.id,
           "attempt join",
-          doctor.id,
+          doctorId,
         );
-        socket.emit("join", { doctorId: doctor.id });
+        socket.emit("join", { doctorId });
       } catch (e) {
         console.error("socket join emit error (client)", e);
       }
@@ -207,6 +248,26 @@ const DoctorDashboard = () => {
   // Count metrics
   const highRiskAlerts = alerts.filter((a) => a.prediction === 1).length;
   const unreadAlerts = alerts.filter((a) => !a.read).length;
+  const doctorId = doctor?.id || doctor?._id;
+  const doctorEmail = (doctor?.email || "").toLowerCase();
+  const otherDoctors = teamDoctors.filter((d) => {
+    const dId = d?.id || d?._id;
+    const dEmail = (d?.email || "").toLowerCase();
+    if (doctorId && dId && String(dId) === String(doctorId)) return false;
+    if (doctorEmail && dEmail && dEmail === doctorEmail) return false;
+    return true;
+  });
+
+  const handleTeamClick = (e) => {
+    e.preventDefault();
+    setShowTeam(true);
+    setTimeout(() => {
+      teamSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+  };
 
   return (
     <div
@@ -265,15 +326,16 @@ const DoctorDashboard = () => {
               <span className="text-sm font-medium">Messages</span>
             </Link>
 
-            <Link
-              to="#staff"
-              className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition duration-200 group"
+            <button
+              type="button"
+              onClick={handleTeamClick}
+              className="w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition duration-200 group"
             >
               <span className="text-xl group-hover:scale-110 transition">
                 👥
               </span>
               <span className="text-sm font-medium">Team</span>
-            </Link>
+            </button>
 
             <Link
               to="/settings"
@@ -300,22 +362,6 @@ const DoctorDashboard = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-4 border border-slate-600">
-          <img
-            src="https://t4.ftcdn.net/jpg/02/60/04/09/360_F_260040900_oO6YW1sHTnKxby4GcjCvtypUCWjnQRg5.jpg"
-            alt="doctor"
-            className="w-12 h-12 rounded-full mx-auto mb-3 border-2 border-blue-400"
-          />
-          <h4 className="text-center font-bold text-sm truncate">
-            {doctor?.name || "Dr. Nimal Perera"}
-          </h4>
-          <p className="text-center text-xs text-slate-400 truncate">
-            {doctor?.email || "doctor@hospital.com"}
-          </p>
-          <p className="text-center text-xs text-slate-300 mt-2 font-medium">
-            Medical Professional
-          </p>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -328,7 +374,7 @@ const DoctorDashboard = () => {
                 theme === "dark" ? "text-white" : "text-slate-900"
               }`}
             >
-              Welcome, Dr. {doctor?.name?.split(" ").pop() || "Perera"}
+              Welcome, {displayName}
             </h1>
             <p
               className={`mt-1 flex items-center space-x-2 ${
@@ -369,7 +415,7 @@ const DoctorDashboard = () => {
                   theme === "dark" ? "text-slate-200" : "text-slate-700"
                 }`}
               >
-                {doctor?.name || "Dr. Nimal"}
+                {displayName}
               </span>
             </div>
           </div>
@@ -512,6 +558,106 @@ const DoctorDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Team Section */}
+        {showTeam && (
+          <div
+            id="staff"
+            ref={teamSectionRef}
+            className={`rounded-xl shadow-md overflow-hidden mb-8 ${
+              theme === "dark" ? "bg-slate-800" : "bg-white"
+            }`}
+          >
+            <div className="bg-gradient-to-r from-blue-700 to-cyan-700 px-6 py-4">
+              <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+                <span>👥</span>
+                <span>Team Doctors</span>
+              </h3>
+            </div>
+
+            <div className="p-6">
+              {loadingTeam && (
+                <p
+                  className={
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }
+                >
+                  Loading team doctors...
+                </p>
+              )}
+
+              {!loadingTeam && teamError && (
+                <p className="text-red-500 text-sm">{teamError}</p>
+              )}
+
+              {!loadingTeam && !teamError && otherDoctors.length === 0 && (
+                <p
+                  className={
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }
+                >
+                  No other doctors found.
+                </p>
+              )}
+
+              {!loadingTeam && !teamError && otherDoctors.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {otherDoctors.map((d) => (
+                    <div
+                      key={d._id || d.id || d.email}
+                      className={`rounded-xl border p-4 shadow-sm ${
+                        theme === "dark"
+                          ? "bg-slate-700 border-slate-600"
+                          : "bg-slate-50 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 mb-3">
+                        <img
+                          src="https://t4.ftcdn.net/jpg/02/60/04/09/360_F_260040900_oO6YW1sHTnKxby4GcjCvtypUCWjnQRg5.jpg"
+                          alt="Doctor"
+                          className="w-11 h-11 rounded-full border-2 border-blue-400"
+                        />
+                        <div>
+                          <p
+                            className={`font-semibold ${
+                              theme === "dark" ? "text-white" : "text-slate-900"
+                            }`}
+                          >
+                            {d.name || "Doctor"}
+                          </p>
+                          <p
+                            className={`text-xs ${
+                              theme === "dark"
+                                ? "text-slate-300"
+                                : "text-slate-500"
+                            }`}
+                          >
+                            {d.role || "doctor"}
+                          </p>
+                        </div>
+                      </div>
+                      <p
+                        className={`text-sm truncate ${
+                          theme === "dark" ? "text-slate-200" : "text-slate-700"
+                        }`}
+                        title={d.email || ""}
+                      >
+                        ✉️ {d.email || "N/A"}
+                      </p>
+                      <p
+                        className={`text-sm mt-1 ${
+                          theme === "dark" ? "text-slate-200" : "text-slate-700"
+                        }`}
+                      >
+                        📞 {d.number || "N/A"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Alerts Section */}
         <div

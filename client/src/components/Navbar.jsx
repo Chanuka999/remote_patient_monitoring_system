@@ -68,7 +68,7 @@ const Navbar = () => {
     { key: "about", to: "/about", icon: "ℹ️" },
     { key: "contact", to: "/contact", icon: "📞" },
     { key: "hospital", to: "/hospital", icon: "🏥" },
-    { key: "solution", to: "/product", icon: "💡" },
+    { key: "doctor", label: "Doctor", to: "/doctor", icon: "👨‍⚕️" },
   ];
 
   return (
@@ -118,7 +118,7 @@ const Navbar = () => {
                 {({ isActive }) => (
                   <>
                     <span className="text-lg">{link.icon}</span>
-                    <span>{t(link.key)}</span>
+                    <span>{link.label || t(link.key)}</span>
                     {isActive && (
                       <span className="ml-auto inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
                     )}
@@ -232,7 +232,7 @@ const Navbar = () => {
                     {({ isActive }) => (
                       <>
                         <span className="text-xl">{link.icon}</span>
-                        <span className="flex-1">{t(link.key)}</span>
+                        <span className="flex-1">{link.label || t(link.key)}</span>
                         {isActive && (
                           <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
                         )}
