@@ -3,6 +3,7 @@ import {
   Loginuser,
   registerUser,
   getMe,
+  updateProfile,
   updateSymptoms,
 } from "../controllers/userController.js";
 
@@ -13,6 +14,7 @@ userRouter.post("/login", Loginuser);
 
 // authenticated endpoints for current user
 userRouter.get("/me", getMe);
+userRouter.patch("/me", updateProfile);
 userRouter.patch("/me/symptoms", updateSymptoms);
 
 export default userRouter;

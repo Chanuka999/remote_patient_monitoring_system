@@ -23,16 +23,16 @@ export const registerUser = async (req, res) => {
     // If DB is not connected, try one reconnect attempt to help dev environments
     if (mongoose.connection.readyState !== 1) {
       console.log(
-        "DB not connected when registering - attempting to connect..."
+        "DB not connected when registering - attempting to connect...",
       );
       console.log(
         "readyState before connect attempt:",
-        mongoose.connection.readyState
+        mongoose.connection.readyState,
       );
       await connectDb();
       console.log(
         "readyState after connect attempt:",
-        mongoose.connection.readyState
+        mongoose.connection.readyState,
       );
       if (mongoose.connection.readyState !== 1) {
         return res
@@ -81,7 +81,7 @@ export const registerUser = async (req, res) => {
       JWT_SECRET,
       {
         expiresIn: "7d",
-      }
+      },
     );
 
     return res.status(201).json({
@@ -116,16 +116,16 @@ export const Loginuser = async (req, res) => {
 
     if (mongoose.connection.readyState !== 1) {
       console.log(
-        "DB not connected when logging in - attempting to connect..."
+        "DB not connected when logging in - attempting to connect...",
       );
       console.log(
         "readyState before connect attempt:",
-        mongoose.connection.readyState
+        mongoose.connection.readyState,
       );
       await connectDb();
       console.log(
         "readyState after connect attempt:",
-        mongoose.connection.readyState
+        mongoose.connection.readyState,
       );
       if (mongoose.connection.readyState !== 1) {
         return res
@@ -151,7 +151,7 @@ export const Loginuser = async (req, res) => {
       JWT_SECRET,
       {
         expiresIn: "7d",
-      }
+      },
     );
 
     return res.status(200).json({
@@ -207,12 +207,64 @@ export const getMe = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        number: user.number,
+        number: user.number || "",
+        address: user.address || "",
+        dateOfBirth: user.dateOfBirth || "",
+        gender: user.gender || "",
         symptoms: user.symptoms || [],
       },
     });
   } catch (err) {
     console.error("/me error", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "server error", error: String(err) });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const payload = verifyTokenFromReq(req);
+    if (!payload || !payload.id)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const { name, number, address, dateOfBirth, gender } = req.body || {};
+
+    const update = {};
+    if (name !== undefined) update.name = String(name).trim();
+    if (number !== undefined) update.number = String(number).trim();
+    if (address !== undefined) update.address = String(address).trim();
+    if (dateOfBirth !== undefined)
+      update.dateOfBirth = String(dateOfBirth).trim();
+    if (gender !== undefined) update.gender = String(gender).trim();
+
+    const user = await User.findByIdAndUpdate(
+      payload.id,
+      { $set: update },
+      { new: true, runValidators: true },
+    ).select("-password");
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        number: user.number || "",
+        address: user.address || "",
+        dateOfBirth: user.dateOfBirth || "",
+        gender: user.gender || "",
+        symptoms: user.symptoms || [],
+      },
+    });
+  } catch (err) {
+    console.error("/me patch error", err);
     return res
       .status(500)
       .json({ success: false, message: "server error", error: String(err) });

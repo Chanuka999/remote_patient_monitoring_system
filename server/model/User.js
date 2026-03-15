@@ -23,14 +23,30 @@ const UserSchema = new mongoose.Schema(
     number: {
       type: String,
     },
+    address: {
+      type: String,
+      default: "",
+    },
+    dateOfBirth: {
+      type: String,
+      default: "",
+    },
+    gender: {
+      type: String,
+      default: "",
+    },
     symptoms: {
       type: [String],
       default: [],
     },
+    imageUrl: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const UserModel = mongoose.model("User", UserSchema);
