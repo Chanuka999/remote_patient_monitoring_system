@@ -25,6 +25,20 @@ export const createAppointment = async (req, res) => {
       });
     }
 
+    if (patient.role !== "patient") {
+      return res.status(403).json({
+        success: false,
+        message: "Only registered patients can book appointments",
+      });
+    }
+
+    if (doctor.role !== "doctor") {
+      return res.status(400).json({
+        success: false,
+        message: "Selected user is not a doctor",
+      });
+    }
+
     const appointment = new Appointment({
       patientId,
       doctorId,
@@ -70,7 +84,7 @@ export const getDoctorAppointments = async (req, res) => {
     }
 
     const appointments = await Appointment.find(query)
-      .populate("patientId", "name email number")
+      .populate("patientId", "name email number gender")
       .populate("doctorId", "name email number")
       .sort({ createdAt: -1 });
 
@@ -98,7 +112,7 @@ export const getPatientAppointments = async (req, res) => {
     }
 
     const appointments = await Appointment.find(query)
-      .populate("patientId", "name email number")
+      .populate("patientId", "name email number gender")
       .populate("doctorId", "name email number")
       .sort({ createdAt: -1 });
 
@@ -140,7 +154,7 @@ export const updateAppointment = async (req, res) => {
       { status, notes: notes || "" },
       { new: true },
     )
-      .populate("patientId", "name email number")
+      .populate("patientId", "name email number gender")
       .populate("doctorId", "name email number");
 
     if (!appointment) {
@@ -169,7 +183,7 @@ export const getAppointment = async (req, res) => {
     const { appointmentId } = req.params;
 
     const appointment = await Appointment.findById(appointmentId)
-      .populate("patientId", "name email number")
+      .populate("patientId", "name email number gender")
       .populate("doctorId", "name email number");
 
     if (!appointment) {

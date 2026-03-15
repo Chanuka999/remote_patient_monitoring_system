@@ -14,6 +14,7 @@ import messageRouter from "./routes/messageRouter.js";
 import appointmentRouter from "./routes/appointmentRouter.js";
 import hospitalRouter from "./routes/hospitalRouter.js";
 import chatbotRouter from "./routes/chatbotRouter.js";
+import adminRouter from "./routes/adminRouter.js";
 
 import { connectDb } from "./lib/db.js";
 import { ML_HOST, ML_PORT } from "./lib/utils.js";
@@ -50,6 +51,7 @@ app.use("/api", measurementRouter);
 app.use("/api", hypertensionRouter);
 app.use("/api", alertRouter);
 app.use("/api", hospitalRouter);
+app.use("/api", adminRouter);
 app.use("/api", messageRouter);
 app.use("/api/appointments", appointmentRouter);
 app.use("/api/chatbot", chatbotRouter);
