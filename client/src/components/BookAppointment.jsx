@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 
 const BookAppointment = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [doctors, setDoctors] = useState([]);
@@ -36,6 +37,7 @@ const BookAppointment = () => {
 
   // Get current user and fetch doctors
   useEffect(() => {
+    const preselectedDoctorId = searchParams.get("doctorId");
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     setCurrentUser(user);
 
@@ -45,7 +47,7 @@ const BookAppointment = () => {
     }
 
     if (user.role !== "patient") {
-      navigate("/appointments");
+      navigate("/appointment");
       return;
     }
 
@@ -54,7 +56,15 @@ const BookAppointment = () => {
         const response = await fetch(`${apiBase}/api/doctors`);
         const result = await response.json();
         if (result.success) {
-          setDoctors(result.data);
+          const doctorList = result.data || [];
+          setDoctors(doctorList);
+
+          if (preselectedDoctorId) {
+            const found = doctorList.find(
+              (d) => String(d._id) === String(preselectedDoctorId),
+            );
+            if (found) setSelectedDoctor(found);
+          }
         }
       } catch (err) {
         console.error("Error fetching doctors:", err);
@@ -62,7 +72,7 @@ const BookAppointment = () => {
     };
 
     fetchDoctors();
-  }, [navigate, apiBase]);
+  }, [navigate, apiBase, searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -185,13 +195,13 @@ const BookAppointment = () => {
                   >
                     Select a Doctor *
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {doctors.map((doctor) => (
                       <button
                         key={doctor._id}
                         type="button"
                         onClick={() => setSelectedDoctor(doctor)}
-                        className={`p-4 rounded-lg border-2 transition text-left ${
+                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition text-left shadow ${
                           selectedDoctor?._id === doctor._id
                             ? isDark
                               ? "border-blue-500 bg-blue-950/40"
@@ -200,28 +210,34 @@ const BookAppointment = () => {
                               ? "border-slate-700 bg-slate-900 hover:border-slate-500"
                               : "border-slate-200 bg-white hover:border-slate-300"
                         }`}
+                        style={{ cursor: "pointer" }}
                       >
-                        <p
-                          className={`font-semibold ${
-                            isDark ? "text-white" : "text-slate-900"
-                          }`}
-                        >
-                          👨‍⚕️ Dr. {doctor.name}
-                        </p>
-                        <p
-                          className={`text-xs mt-1 ${
-                            isDark ? "text-slate-300" : "text-slate-600"
-                          }`}
-                        >
-                          📧 {doctor.email}
-                        </p>
-                        <p
-                          className={`text-xs ${
-                            isDark ? "text-slate-300" : "text-slate-600"
-                          }`}
-                        >
-                          📱 {doctor.number}
-                        </p>
+                        <img
+                          src={
+                            doctor.imageUrl ||
+                            "https://ui-avatars.com/api/?name=" +
+                              encodeURIComponent(doctor.name)
+                          }
+                          alt={doctor.name}
+                          className="w-14 h-14 rounded-full object-cover border border-slate-300"
+                        />
+                        <div className="flex-1">
+                          <p
+                            className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}
+                          >
+                            👨‍⚕️ Dr. {doctor.name}
+                          </p>
+                          <p
+                            className={`text-xs mt-1 ${isDark ? "text-slate-300" : "text-slate-600"}`}
+                          >
+                            📧 {doctor.email}
+                          </p>
+                          <p
+                            className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}
+                          >
+                            📱 {doctor.number}
+                          </p>
+                        </div>
                       </button>
                     ))}
                   </div>

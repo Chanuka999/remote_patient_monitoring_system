@@ -262,7 +262,26 @@ const PatientDashboard = () => {
           });
         },
         async () => resolve(await getIpBasedLocation()),
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      );
+    });
+
+  // Strict GPS-only version — never falls back to inaccurate IP location.
+  const getBrowserLocationStrict = () =>
+    new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: Number(position.coords.latitude),
+            longitude: Number(position.coords.longitude),
+          });
+        },
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
       );
     });
 
@@ -311,22 +330,30 @@ const PatientDashboard = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const location = await getBrowserLocation();
+      const location = await getBrowserLocationStrict();
       if (!location) {
         throw new Error(
-          "Location access is required to find nearby hospitals.",
+          "Location access denied. Please allow location permission in your browser (lock icon in address bar) and try again.",
         );
       }
 
       setPatientLocation(location);
 
       const response = await fetch(
-        `${API_BASE}/api/hospitals/nearby?lat=${location.latitude}&lng=${location.longitude}&radius=10000`,
+        `${API_BASE}/api/hospitals/nearby?lat=${location.latitude}&lng=${location.longitude}&radius=25000`,
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         },
       );
-      const data = await response.json();
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an unexpected response. Please try again.",
+        );
+      }
 
       if (!response.ok || !data?.success) {
         throw new Error(data?.message || "Failed to load nearby hospitals");
@@ -479,15 +506,7 @@ const PatientDashboard = () => {
           <div className="sticky top-0 p-6 lg:h-screen lg:overflow-y-auto">
             <div className="mb-8">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500 text-lg text-white">
-                  ❤️
-                </div>
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-500">
-                    HealthLink
-                  </p>
-                  <h2 className="text-2xl font-black">Patient Portal</h2>
-                </div>
+                <h2 className="text-2xl font-black">Patient Portal</h2>
               </div>
               <p
                 className={`mt-4 text-sm leading-7 ${isDark ? "text-slate-400" : "text-slate-600"}`}
@@ -1035,12 +1054,13 @@ const PatientDashboard = () => {
                       <div className="h-64 overflow-hidden rounded-xl border border-slate-300">
                         <iframe
                           title="Nearby hospitals map"
-                          src={`https://www.google.com/maps?q=${patientLocation.latitude},${patientLocation.longitude}&z=13&output=embed`}
+                          src={`https://maps.google.com/maps?q=hospital&ll=${patientLocation.latitude},${patientLocation.longitude}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
                           width="100%"
                           height="100%"
                           style={{ border: 0 }}
                           loading="lazy"
                           referrerPolicy="no-referrer-when-downgrade"
+                          allowFullScreen
                         />
                       </div>
                     </div>
@@ -1054,7 +1074,26 @@ const PatientDashboard = () => {
                           Nearest Hospitals
                         </h3>
                         <div className="grid gap-3">
-                          {nearbyHospitals.slice(0, 6).map((hospital) => (
+                          {nearbyHospitals.length === 0 && (
+                            <div
+                              className={`rounded-2xl border p-4 text-sm ${
+                                isDark
+                                  ? "border-slate-700 bg-slate-800 text-slate-300"
+                                  : "border-slate-200 bg-slate-50 text-slate-600"
+                              }`}
+                            >
+                              No hospitals found in your area via open map data.
+                              <a
+                                href={`https://www.google.com/maps/search/hospital/@${patientLocation?.latitude},${patientLocation?.longitude},14z`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="ml-2 font-semibold text-sky-500 underline"
+                              >
+                                Search on Google Maps →
+                              </a>
+                            </div>
+                          )}
+                          {nearbyHospitals.slice(0, 8).map((hospital) => (
                             <div
                               key={`${hospital.placeId}-${hospital.name}`}
                               className={`rounded-2xl border p-4 ${

@@ -1,293 +1,284 @@
 import React from "react";
 import { useTheme } from "../context/ThemeContext";
 
-function Header() {
-  const { theme } = useTheme();
-  return (
-    <header
-      className={`py-16 shadow-lg transition-colors duration-300 ${
-        theme === "dark" ? "bg-slate-800" : "bg-gray-200"
-      }`}
-    >
-      <div className="container mx-auto px-6 text-center">
-        <h1
-          className={`text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-lg ${
-            theme === "dark" ? "text-blue-400" : "text-gray-900"
-          }`}
-        >
-          About Remote Patient Monitoring System
-        </h1>
-        <p
-          className={`mt-4 text-lg md:text-xl max-w-2xl mx-auto ${
-            theme === "dark" ? "text-gray-300" : "text-black"
-          }`}
-        >
-          Empowering Chronic Disease Management with Cutting-Edge Technology
-        </p>
-      </div>
-    </header>
-  );
-}
-
-function Section({
-  title,
-  children,
-  imageUrl,
-  imageAlt,
-  videoUrl,
-  videoPoster,
-}) {
-  const { theme } = useTheme();
-  return (
-    <section
-      className={`py-16 px-6 transition-colors duration-300 ${
-        theme === "dark"
-          ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-          : "bg-gradient-to-br from-gray-50 via-white to-gray-100"
-      }`}
-    >
-      <div
-        className={`container mx-auto flex flex-col md:flex-row items-center gap-10 p-6 rounded-2xl shadow-lg backdrop-blur-md border hover:shadow-2xl transition-shadow duration-500 ${
-          theme === "dark"
-            ? "bg-slate-800/90 border-slate-700"
-            : "bg-white bg-opacity-90 border-gray-200"
-        }`}
-      >
-        {videoUrl ? (
-          <div className="md:w-1/2 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-500">
-            <video
-              src={videoUrl}
-              poster={videoPoster}
-              controls
-              className="w-full h-64 object-cover"
-            />
-          </div>
-        ) : imageUrl ? (
-          <div className="md:w-1/2 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-500">
-            <img
-              src={imageUrl}
-              alt={imageAlt}
-              className="w-full h-64 object-cover"
-            />
-          </div>
-        ) : null}
-
-        <div className={imageUrl || videoUrl ? "md:w-1/2" : "w-full"}>
-          <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-purple-700 to-purple-900 mb-6">
-            {title}
-          </h2>
-          <div className="text-gray-700 leading-relaxed text-lg">
-            {children}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FeatureList({ items }) {
-  return (
-    <ul className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-      {items.map((item, index) => (
-        <li
-          key={index}
-          className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 shadow-md hover:shadow-xl transition duration-500 border border-blue-200"
-        >
-          <span className="font-semibold text-blue-600 text-lg">
-            {item.title}:
-          </span>
-          <p className="text-gray-700 mt-1">{item.description}</p>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 const About = () => {
+  const { theme } = useTheme();
+
+  const careFlow = [
+    {
+      title: "Measure at home",
+      description:
+        "Patients use connected devices to capture blood pressure, glucose, and key daily indicators.",
+    },
+    {
+      title: "Share securely",
+      description:
+        "Data is encrypted in transit and sent to the care platform in real time.",
+    },
+    {
+      title: "Respond faster",
+      description:
+        "Smart thresholds and alerts help clinicians intervene before conditions worsen.",
+    },
+  ];
+
   const features = [
     {
-      title: "Real-Time Data Collection",
-      description:
-        "Patients use FDA-approved devices like blood pressure cuffs and glucose monitors to track vital signs.",
+      title: "Personalized dashboards",
+      description: "Simple trend views make health data easy to understand.",
     },
     {
-      title: "Seamless Data Transmission",
+      title: "Care team collaboration",
       description:
-        "Data is securely transmitted to our cloud platform via cellular or Bluetooth.",
+        "Doctors, nurses, and caregivers can coordinate from one shared system.",
     },
     {
-      title: "Proactive Alerts",
+      title: "Clinical-grade alert engine",
       description:
-        "Customizable thresholds trigger alerts for care teams to enable early intervention.",
+        "Prioritizes what is urgent and reduces noise for providers.",
     },
     {
-      title: "Patient Empowerment",
+      title: "Always-on support",
       description:
-        "User-friendly interface for patients to monitor health and access resources.",
-    },
-    {
-      title: "EHR Integration",
-      description:
-        "Seamless integration with electronic health records for streamlined workflows.",
-    },
-    {
-      title: "24/7 Support",
-      description:
-        "Round-the-clock clinical support via text, phone, or video.",
+        "Patients get timely guidance through chat, call, or follow-up.",
     },
   ];
 
   const benefits = [
     {
-      title: "Improved Health Outcomes",
-      description:
-        "Early detection reduces emergency visits and hospital readmissions.",
+      title: "Better outcomes",
+      description: "Early detection lowers emergency visits and readmissions.",
     },
     {
-      title: "Cost-Effective Care",
-      description: "Minimizes hospital visits and optimizes treatment plans.",
+      title: "Lower cost of care",
+      description: "Remote follow-up reduces avoidable in-person visits.",
     },
     {
-      title: "Enhanced Accessibility",
-      description:
-        "High-quality care for patients in rural or underserved areas.",
+      title: "Access anywhere",
+      description: "Supports rural and underserved communities effectively.",
     },
     {
-      title: "Data-Driven Decisions",
-      description: "Daily insights for clinicians to adjust treatments.",
+      title: "Data-driven decisions",
+      description: "Clinicians adjust treatment using daily trend insights.",
     },
     {
-      title: "Reduced Burden",
-      description:
-        "Eases pressure on hospitals with efficient home-based care.",
+      title: "Reduced workload",
+      description: "Care teams focus on high-risk patients first.",
     },
   ];
 
+  const isDark = theme === "dark";
+
+  const sectionBg = isDark
+    ? "bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
+    : "bg-gradient-to-b from-sky-50 via-white to-cyan-50";
+
+  const cardBg = isDark
+    ? "bg-slate-900/70 border-slate-700 text-slate-100"
+    : "bg-white/90 border-slate-200 text-slate-800";
+
+  const mutedText = isDark ? "text-slate-300" : "text-slate-600";
+
   return (
-    <div className="font-sans min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <Header />
-      <main>
-        <Section
-          title="Our Mission"
-          videoUrl="https://v.ftcdn.net/02/18/59/48/700_F_218594849_xyzWrd4fBAqjVuYLJ07HN56YhezJe4US_ST.mp4"
-          videoPoster="https://images.unsplash.com/photo-1576091160399-1123a8340d3f?auto=format&fit=crop&w=800&q=80"
+    <div className={`min-h-screen ${sectionBg}`}>
+      <main className="mx-auto w-full max-w-7xl px-5 py-10 md:px-8 md:py-16">
+        <section
+          className={`relative overflow-hidden rounded-3xl border px-6 py-12 shadow-xl md:px-12 ${cardBg}`}
         >
-          <p>
-            <span className="font-semibold text-blue-600"></span>, we are
-            dedicated to transforming chronic disease management through
-            innovative remote patient monitoring (RPM) solutions. Our mission is
-            to empower patients, enhance healthcare delivery, and improve
-            outcomes for individuals living with chronic conditions like
-            diabetes, hypertension, heart failure, and COPD.
-          </p>
-        </Section>
+          <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+          <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
 
-        <Section title="Why Remote Patient Monitoring?">
-          <p>
-            Chronic diseases account for over{" "}
-            <span className="font-bold text-red-500">70% of deaths</span>{" "}
-            worldwide and cost trillions annually. Our RPM system enables
-            continuous, real-time health monitoring outside clinical settings,
-            bridging the gap between patients and providers for timely
-            interventions and personalized care.
-          </p>
-        </Section>
+          <div className="relative z-10 grid items-center gap-10 lg:grid-cols-2">
+            <div>
+              <p className="inline-flex items-center rounded-full bg-cyan-500/15 px-4 py-1 text-sm font-semibold text-cyan-500">
+                About Our Platform
+              </p>
+              <h1 className="mt-4 text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">
+                Remote Care That Feels
+                <span className="block text-cyan-500">
+                  Closer, Faster, Smarter
+                </span>
+              </h1>
+              <p
+                className={`mt-5 max-w-xl text-base leading-7 md:text-lg ${mutedText}`}
+              >
+                We help patients with chronic conditions stay connected to care
+                teams from home through secure remote monitoring, real-time
+                alerts, and easy-to-read health insights.
+              </p>
 
-        <Section
-          title="What We Offer"
-          imageUrl="https://media.istockphoto.com/id/1363170016/photo/smartwatch-for-assisted-living-a-woman-from-the-medical-health-system-wears-a-smartwatch-for.jpg?s=612x612&w=0&k=20&c=BgQOOTLKRTGnA9cv9et0iQqLwuEm5z-3lck9b1VjsOQ="
-          imageAlt="Medical devices for remote monitoring"
-        >
-          <p>
-            Our state-of-the-art RPM system supports patients with chronic
-            diseases through:
-          </p>
-          <FeatureList items={features} />
-        </Section>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <a
+                  href="/book-appointment"
+                  className="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/30 transition-transform duration-300 hover:-translate-y-0.5"
+                >
+                  Book an Appointment
+                </a>
+                <a
+                  href="/contact"
+                  className={`rounded-xl border px-5 py-3 text-sm font-semibold transition-colors duration-300 ${
+                    isDark
+                      ? "border-slate-500 text-slate-100 hover:bg-slate-800"
+                      : "border-slate-300 text-slate-800 hover:bg-slate-100"
+                  }`}
+                >
+                  Contact Care Team
+                </a>
+              </div>
+            </div>
 
-        <Section title="Benefits for Patients and Providers">
-          <FeatureList items={benefits} />
-        </Section>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                { label: "Patients Monitored", value: "10k+" },
+                { label: "Alert Response", value: "< 5 min" },
+                { label: "Care Availability", value: "24/7" },
+              ].map((stat) => (
+                <article
+                  key={stat.label}
+                  className={`rounded-2xl border p-5 backdrop-blur ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800/60"
+                      : "border-cyan-100 bg-white"
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-cyan-500">
+                    {stat.value}
+                  </p>
+                  <p className={`mt-1 text-sm ${mutedText}`}>{stat.label}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
 
-        <Section title="Our Commitment to Quality">
-          <p>
-            We prioritize patient safety, data security, and clinical accuracy.
-            Our devices meet{" "}
-            <span className="text-green-600 font-semibold">FDA standards</span>,
-            and our platform complies with{" "}
-            <span className="text-blue-600 font-semibold">
-              HIPAA regulations
-            </span>
-            . We collaborate with healthcare providers and patients to ensure
-            our system meets the evolving needs of chronic disease management.
-          </p>
-        </Section>
+        <section className="mt-12 grid gap-8 lg:grid-cols-2">
+          <article className={`rounded-3xl border p-6 md:p-8 ${cardBg}`}>
+            <h2 className="text-2xl font-bold md:text-3xl">Our Mission</h2>
+            <p className={`mt-4 leading-7 ${mutedText}`}>
+              We are transforming chronic disease management by making care
+              proactive, personal, and continuous. Our system supports diabetes,
+              hypertension, heart failure, and COPD programs with actionable
+              clinical intelligence.
+            </p>
+            <ul className={`mt-5 space-y-3 text-sm md:text-base ${mutedText}`}>
+              <li>Real-time trend tracking from home devices</li>
+              <li>Early interventions through configurable risk alerts</li>
+              <li>Stronger collaboration between patients and providers</li>
+            </ul>
+          </article>
 
-        <Section title="Who We Serve">
-          <ul className="list-disc pl-6 space-y-3 mt-4 text-gray-700">
-            <li>
-              Patients with chronic conditions such as diabetes, hypertension,
-              heart failure, COPD, and certain cancers.
-            </li>
-            <li>
-              Healthcare providers seeking to enhance chronic care management.
-            </li>
-            <li>
-              Employers and health systems aiming to reduce costs and improve
-              wellness.
-            </li>
-          </ul>
-        </Section>
-
-        <Section title="Why Choose Us?">
-          <ul className="list-disc pl-6 space-y-3 mt-4 text-gray-700">
-            <li>
-              <span className="font-semibold text-purple-600">
-                Proven Impact:
-              </span>{" "}
-              RPM reduces hospital readmissions and improves adherence.
-            </li>
-            <li>
-              <span className="font-semibold text-pink-600">
-                Patient-Centered Approach:
-              </span>{" "}
-              Designed with input from patients and clinicians.
-            </li>
-            <li>
-              <span className="font-semibold text-blue-600">
-                Innovative Technology:
-              </span>{" "}
-              AI-driven analytics and user-friendly interfaces.
-            </li>
-            <li>
-              <span className="font-semibold text-green-600">
-                Scalable Solutions:
-              </span>{" "}
-              Adapts to individual practices or large health systems.
-            </li>
-          </ul>
-        </Section>
-
-        <Section
-          title="Join Us in Revolutionizing Chronic Disease Care"
-          imageUrl="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-          imageAlt="Healthcare technology interface"
-        >
-          <p>
-            At{" "}
-            <span className="text-purple-600 font-semibold">
-              [Your Company Name]
-            </span>
-            , we believe technology can transform lives. Our RPM system empowers
-            patients and enables proactive care.
-          </p>
-          <a
-            href="[Your Website URL]"
-            className="inline-block mt-6 px-6 py-3 bg-gradient-to-r from-purple-400 via-purple-700 to-purple-900 text-white font-semibold rounded-lg shadow-md hover:shadow-xl hover:scale-105 transition-all duration-500"
+          <article
+            className={`overflow-hidden rounded-3xl border ${
+              isDark ? "border-slate-700" : "border-slate-200"
+            }`}
           >
-            Schedule a Demo
-          </a>
-        </Section>
+            <img
+              src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1200&q=80"
+              alt="Doctor reviewing patient data on a digital dashboard"
+              className="h-full min-h-72 w-full object-cover"
+            />
+          </article>
+        </section>
+
+        <section className="mt-12">
+          <h2
+            className={`text-2xl font-bold md:text-3xl ${
+              isDark ? "text-slate-100" : "text-slate-900"
+            }`}
+          >
+            How the Care Flow Works
+          </h2>
+          <div className="mt-6 grid gap-5 md:grid-cols-3">
+            {careFlow.map((step, index) => (
+              <article
+                key={step.title}
+                className={`rounded-2xl border p-6 ${cardBg}`}
+              >
+                <p className="text-sm font-semibold text-cyan-500">
+                  Step {index + 1}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold">{step.title}</h3>
+                <p
+                  className={`mt-3 text-sm leading-6 md:text-base ${mutedText}`}
+                >
+                  {step.description}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-12 grid gap-8 lg:grid-cols-2">
+          <article className={`rounded-3xl border p-6 md:p-8 ${cardBg}`}>
+            <h2 className="text-2xl font-bold md:text-3xl">What We Offer</h2>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {features.map((item) => (
+                <div
+                  key={item.title}
+                  className={`rounded-xl border p-4 ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800/50"
+                      : "border-slate-200 bg-slate-50"
+                  }`}
+                >
+                  <h3 className="font-semibold">{item.title}</h3>
+                  <p className={`mt-2 text-sm leading-6 ${mutedText}`}>
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className={`rounded-3xl border p-6 md:p-8 ${cardBg}`}>
+            <h2 className="text-2xl font-bold md:text-3xl">Benefits</h2>
+            <div className="mt-5 space-y-4">
+              {benefits.map((item) => (
+                <div key={item.title} className="rounded-xl bg-cyan-500/10 p-4">
+                  <h3 className="font-semibold text-cyan-500">{item.title}</h3>
+                  <p className={`mt-1 text-sm leading-6 ${mutedText}`}>
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </article>
+        </section>
+
+        <section className={`mt-12 rounded-3xl border p-6 md:p-10 ${cardBg}`}>
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div>
+              <h2 className="text-2xl font-bold md:text-3xl">
+                Privacy and Quality First
+              </h2>
+              <p className={`mt-4 leading-7 ${mutedText}`}>
+                Patient safety and trust are central to everything we build. Our
+                workflows are designed for clinical reliability, secure data
+                exchange, and consistent care quality at scale.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                "Encrypted data transfer",
+                "Role-based access controls",
+                "Clinical threshold customization",
+                "Audit-friendly monitoring logs",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className={`rounded-xl border p-4 text-sm ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800/50"
+                      : "border-slate-200 bg-slate-50"
+                  }`}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );
