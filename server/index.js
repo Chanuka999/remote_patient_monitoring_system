@@ -15,6 +15,8 @@ import appointmentRouter from "./routes/appointmentRouter.js";
 import hospitalRouter from "./routes/hospitalRouter.js";
 import chatbotRouter from "./routes/chatbotRouter.js";
 import adminRouter from "./routes/adminRouter.js";
+import reportRouter from "./routes/reportRouter.js";
+import path from "path";
 
 import { connectDb } from "./lib/db.js";
 import { ML_HOST, ML_PORT } from "./lib/utils.js";
@@ -27,6 +29,9 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -56,6 +61,7 @@ app.use("/api", messageRouter);
 app.use("/api/appointments", appointmentRouter);
 app.use("/api/chatbot", chatbotRouter);
 app.use("/api/debug", debugRouter);
+app.use("/api/reports", reportRouter);
 
 // User routes (register/login) are mounted at root in current client expectations
 app.use("/", userRouter);
