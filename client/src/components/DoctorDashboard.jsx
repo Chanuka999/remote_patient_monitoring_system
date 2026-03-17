@@ -15,6 +15,7 @@ import {
 import { Link } from "react-router-dom";
 import ioClient from "socket.io-client";
 import { useTheme } from "../context/ThemeContext";
+import ReportManager from "./ReportManager";
 
 ChartJS.register(
   CategoryScale,
@@ -74,6 +75,13 @@ const DoctorDashboard = () => {
   const [teamError, setTeamError] = useState("");
   const [showTeam, setShowTeam] = useState(false);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const [selectedPatientTrends, setSelectedPatientTrends] = useState(null);
+  const [trendsLoading, setTrendsLoading] = useState(false);
+  const [showTrendsModal, setShowTrendsModal] = useState(false);
+  const [trendPeriod, setTrendPeriod] = useState("weekly");
+  const [activeModalTab, setActiveModalTab] = useState("trends"); // trends or reports
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+
   const displayName = doctor?.name?.trim() || "Doctor";
   const teamSectionRef = useRef(null);
 
@@ -208,6 +216,33 @@ const DoctorDashboard = () => {
       }
     };
   }, [doctor]);
+
+  const fetchPatientTrends = async (patientId, patientName) => {
+    setTrendsLoading(true);
+    setShowTrendsModal(true);
+    setActiveModalTab("trends");
+    setSelectedPatientId(patientId);
+    try {
+      const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/measurements/trends?patientId=${patientId}&period=${trendPeriod}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.success) {
+          setSelectedPatientTrends({
+            ...json.data,
+            patientName
+          });
+        }
+      }
+    } catch (err) {
+      console.error("fetchPatientTrends error", err);
+    } finally {
+      setTrendsLoading(false);
+    }
+  };
 
   const markAsRead = async (id) => {
     try {
@@ -1014,7 +1049,13 @@ const DoctorDashboard = () => {
                       </div>
 
                       {/* Action Button */}
-                      <div className="ml-4">
+                      <div className="ml-4 flex flex-col gap-2">
+                        <button
+                          onClick={() => fetchPatientTrends(a.patientId?._id || a.patientSnapshot?._id, a.patientSnapshot?.name || "Patient")}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition"
+                        >
+                          📈 View Trends
+                        </button>
                         {!a.read ? (
                           <button
                             onClick={() => markAsRead(a._id)}
@@ -1024,7 +1065,7 @@ const DoctorDashboard = () => {
                           </button>
                         ) : (
                           <span
-                            className={`text-sm font-medium px-4 py-2 ${
+                            className={`text-center text-sm font-medium px-4 py-2 ${
                               theme === "dark"
                                 ? "text-slate-400"
                                 : "text-slate-500"
@@ -1042,6 +1083,107 @@ const DoctorDashboard = () => {
           </div>
         </div>
       </div>
+
+      {showTrendsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className={`w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl ${
+            theme === "dark" ? "bg-slate-900 border border-slate-700" : "bg-white"
+          }`}>
+            <div className="sticky top-0 z-10 p-6 border-b flex justify-between items-center bg-inherit">
+              <div>
+                <h2 className={`text-2xl font-bold ${theme === "dark" ? "text-white" : "text-slate-900"}`}>
+                  Health Trends: {selectedPatientTrends?.patientName || "Patient"}
+                </h2>
+                <p className={`text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+                  Viewing {trendPeriod} historical data patterns
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowTrendsModal(false)}
+                className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition`}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="px-6 py-2 border-b flex gap-4 bg-inherit">
+              <button 
+                onClick={() => setActiveModalTab("trends")}
+                className={`px-4 py-2 text-sm font-bold transition border-b-2 ${activeModalTab === 'trends' ? 'border-blue-500 text-blue-500' : 'border-transparent text-slate-500'}`}
+              >
+                Health Trends
+              </button>
+              <button 
+                onClick={() => setActiveModalTab("reports")}
+                className={`px-4 py-2 text-sm font-bold transition border-b-2 ${activeModalTab === 'reports' ? 'border-blue-500 text-blue-500' : 'border-transparent text-slate-500'}`}
+              >
+                Lab Reports
+              </button>
+            </div>
+
+            <div className="p-6">
+              {trendsLoading ? (
+                <div className="py-20 text-center">
+                  <div className="animate-spin text-4xl mb-4">⏳</div>
+                  <p>Loading patient trends...</p>
+                </div>
+              ) : activeModalTab === "reports" ? (
+                <ReportManager patientId={selectedPatientId} isDoctor={true} />
+              ) : selectedPatientTrends ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Health Score Chart */}
+                  <div className={`p-6 rounded-2xl border ${theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                    <h3 className="font-bold mb-4">Overall Health Score</h3>
+                    <div className="h-64">
+                      <Line 
+                        data={{
+                          labels: selectedPatientTrends.healthScoreTrend.map(t => t.label),
+                          datasets: [{
+                            label: "Health Score",
+                            data: selectedPatientTrends.healthScoreTrend.map(t => t.score),
+                            borderColor: "#10b981",
+                            backgroundColor: "rgba(16, 185, 129, 0.1)",
+                            fill: true,
+                            tension: 0.4
+                          }]
+                        }}
+                        options={{ responsive: true, maintainAspectRatio: false }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Individual Metrics */}
+                  {Object.entries(selectedPatientTrends.metricTrends || {}).map(([key, trend]) => (
+                    <div key={key} className={`p-6 rounded-2xl border ${theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                      <h3 className="font-bold mb-4 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h3>
+                      <div className="h-64">
+                        <Line 
+                          data={{
+                            labels: trend.map(t => t.label),
+                            datasets: [{
+                              label: key,
+                              data: trend.map(t => t.value),
+                              borderColor: "#3b82f6",
+                              backgroundColor: "rgba(59, 130, 246, 0.1)",
+                              fill: true,
+                              tension: 0.4
+                            }]
+                          }}
+                          options={{ responsive: true, maintainAspectRatio: false }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center">
+                  <p>No trend data available for this patient.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

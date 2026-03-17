@@ -13,6 +13,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import Chat from "../Chat";
+import ReportManager from "./ReportManager";
 
 ChartJS.register(
   CategoryScale,
@@ -71,26 +72,15 @@ const defaultChart = {
   ],
 };
 
-const metricCards = [
-  { title: "Blood Pressure", value: "120/80 mmHg" },
-  { title: "Heart Rate", value: "80 bpm" },
-  { title: "SPO2", value: "98%" },
-  { title: "RPM Device Usage", value: "40 min" },
-  { title: "Respiration Rate", value: "18 bpm" },
-];
+
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
-  const [chartData] = useState([
-    defaultChart,
-    defaultChart,
-    defaultChart,
-    defaultChart,
-    defaultChart,
-  ]);
+  const [metricTrends, setMetricTrends] = useState({});
+  const [lastMeasurement, setLastMeasurement] = useState(null);
   const [reportPeriod, setReportPeriod] = useState("weekly");
   const [trendLoading, setTrendLoading] = useState(false);
   const [trendSummary, setTrendSummary] = useState({
@@ -129,6 +119,61 @@ const PatientDashboard = () => {
   }
 
   const userName = storedUser?.name || storedUser?.email || "Guest";
+  
+  const metricCards = [
+    { 
+      title: "Blood Pressure", 
+      value: lastMeasurement ? `${lastMeasurement.systolic}/${lastMeasurement.diastolic} mmHg` : "--/-- mmHg",
+      metricKey: "systolic", // primary key for chart
+      raw: lastMeasurement ? lastMeasurement.systolic : 0
+    },
+    { 
+      title: "Heart Rate", 
+      value: lastMeasurement ? `${lastMeasurement.heartRate} bpm` : "-- bpm",
+      metricKey: "heartRate",
+      raw: lastMeasurement ? lastMeasurement.heartRate : 0
+    },
+    { 
+      title: "SPO2", 
+      value: lastMeasurement ? `${lastMeasurement.oxygenSaturation}%` : "--%",
+      metricKey: "oxygenSaturation",
+      raw: lastMeasurement ? lastMeasurement.oxygenSaturation : 0
+    },
+    { 
+      title: "Glucose", 
+      value: lastMeasurement ? `${lastMeasurement.glucoseLevel} mg/dL` : "-- mg/dL",
+      metricKey: "glucoseLevel",
+      raw: lastMeasurement ? lastMeasurement.glucoseLevel : 0
+    },
+    { 
+      title: "Temperature", 
+      value: lastMeasurement ? `${lastMeasurement.temperature} °C` : "-- °C",
+      metricKey: "temperature",
+      raw: lastMeasurement ? lastMeasurement.temperature : 0
+    },
+  ];
+
+  const getChartDataForMetric = (key) => {
+    const trend = metricTrends[key] || [];
+    if (!trend.length) return defaultChart;
+
+    return {
+      labels: trend.map(t => t.label),
+      datasets: [
+        {
+          label: key,
+          data: trend.map(t => t.value),
+          borderColor: isDark ? "rgb(56, 189, 248)" : "rgb(14, 165, 233)",
+          backgroundColor: isDark ? "rgba(56, 189, 248, 0.1)" : "rgba(14, 165, 233, 0.1)",
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: isDark ? "rgb(56, 189, 248)" : "rgb(14, 165, 233)",
+        },
+      ],
+    };
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -175,7 +220,10 @@ const PatientDashboard = () => {
         setRiskTrendData(payload.riskTrend || []);
         setHealthScoreTrendData(payload.healthScoreTrend || []);
         setImprovementIndicators(payload.improvementIndicators || []);
-      } catch {
+        setMetricTrends(payload.metricTrends || {});
+        setLastMeasurement(payload.lastMeasurement || null);
+      } catch (err) {
+        console.error("Error loading health trends:", err);
         // ignore and keep existing fallback dashboard values
       } finally {
         setTrendLoading(false);
@@ -902,7 +950,7 @@ const PatientDashboard = () => {
               </div>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {metricCards.map((metric, index) => {
-                  const status = getHealthStatus(metric.title, metric.value);
+                  const status = getHealthStatus(metric.title, metric.raw);
                   const statusClasses = {
                     healthy: isDark
                       ? "border-green-500 bg-slate-900"
@@ -926,6 +974,8 @@ const PatientDashboard = () => {
                         : status === "critical"
                           ? "text-red-500"
                           : "text-sky-500";
+                  
+                  const chartData = getChartDataForMetric(metric.metricKey);
 
                   return (
                     <article
@@ -971,9 +1021,9 @@ const PatientDashboard = () => {
                             : "border-slate-200 bg-slate-50"
                         }`}
                       >
-                        {chartData[index]?.labels ? (
+                        {chartData ? (
                           <Line
-                            data={chartData[index]}
+                            data={chartData}
                             options={chartOptions}
                           />
                         ) : (
@@ -988,6 +1038,10 @@ const PatientDashboard = () => {
                   );
                 })}
               </div>
+            </section>
+
+            <section className="mt-8">
+              <ReportManager />
             </section>
 
             {showHospitalFinder && (
