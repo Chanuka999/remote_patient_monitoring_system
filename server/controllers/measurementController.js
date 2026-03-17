@@ -191,15 +191,22 @@ export const getHealthTrends = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
+    // Allow doctors/admins to view other patients, 
+    // but patients can only view their own data.
+    let targetPatientId = payload.id;
+    if ((payload.role === "doctor" || payload.role === "admin") && req.query.patientId) {
+      targetPatientId = req.query.patientId;
+    }
+
     const period = req.query.period === "monthly" ? "monthly" : "weekly";
     const days = period === "monthly" ? 30 : 7;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     const [measurements, predictions] = await Promise.all([
-      Measurement.find({ patientId: payload.id, createdAt: { $gte: since } })
+      Measurement.find({ patientId: targetPatientId, createdAt: { $gte: since } })
         .sort({ createdAt: 1 })
         .lean(),
-      Prediction.find({ patientId: payload.id, createdAt: { $gte: since } })
+      Prediction.find({ patientId: targetPatientId, createdAt: { $gte: since } })
         .sort({ createdAt: 1 })
         .lean(),
     ]);
@@ -305,6 +312,45 @@ export const getHealthTrends = async (req, res) => {
 
     const improvementIndicators = buildIndicators(measurements);
 
+    // Generate trend data for each metric
+    const metrics = [
+      "systolic",
+      "diastolic",
+      "heartRate",
+      "glucoseLevel",
+      "temperature",
+      "oxygenSaturation",
+    ];
+
+    const metricTrends = {};
+    metrics.forEach((metric) => {
+      const points = measurements.map((m) => ({
+        label: toPeriodKey(m.createdAt, period),
+        date: m.createdAt,
+        value: Number(m[metric]) || 0,
+      }));
+
+      const grouped = points.reduce((acc, item) => {
+        if (!acc[item.label])
+          acc[item.label] = { total: 0, count: 0, date: item.date };
+        acc[item.label].total += item.value;
+        acc[item.label].count += 1;
+        return acc;
+      }, {});
+
+      metricTrends[metric] = Object.entries(grouped)
+        .map(([label, val]) => ({
+          label,
+          date: val.date,
+          value: Number((val.total / Math.max(val.count, 1)).toFixed(1)),
+        }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    });
+
+    const lastMeasurement = measurements.length
+      ? measurements[measurements.length - 1]
+      : null;
+
     return res.status(200).json({
       success: true,
       data: {
@@ -313,6 +359,8 @@ export const getHealthTrends = async (req, res) => {
         riskTrend,
         healthScoreTrend,
         improvementIndicators,
+        metricTrends,
+        lastMeasurement,
       },
     });
   } catch (err) {
