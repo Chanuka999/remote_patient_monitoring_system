@@ -309,6 +309,18 @@ export const predict = async (req, res) => {
         ];
       }
 
+      // Backend Safety Override for Diabetes: 
+      // Features: [preg, glucose, bp, skin, insulin, bmi, pedigree, age]
+      if (body.model === "diabetes" && Array.isArray(features)) {
+        const glucose = Number(features[1]);
+        const bmi = Number(features[5]);
+        // If clinical vitals are perfectly normal, override the AI to prevent doctor alerts
+        if (glucose > 0 && glucose < 100 && bmi > 0 && bmi < 25) {
+          console.log("Diabetes alert suppressed: Clinical vitals are normal", { glucose, bmi });
+          mlPrediction = 0;
+        }
+      }
+
       // Save measurement record for traceability
       try {
         const patientId = body?.patientId;

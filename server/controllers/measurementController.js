@@ -27,26 +27,25 @@ const distanceToRange = (value, min, max) => {
 
 const calculateHealthScore = (m) => {
   if (!m) return 0;
-  const systolicPenalty =
-    distanceToRange(Number(m.systolic) || 0, 90, 120) * 0.6;
-  const diastolicPenalty =
-    distanceToRange(Number(m.diastolic) || 0, 60, 80) * 0.6;
+  
+  // Blood Pressure Penalties (Clinical threshold: 120/80)
+  const systolicPenalty = distanceToRange(Number(m.systolic) || 0, 90, 120) * 0.8;
+  const diastolicPenalty = distanceToRange(Number(m.diastolic) || 0, 60, 80) * 0.8;
+  
+  // Heart Rate Penalty (Normal: 60-100)
   const heartPenalty = distanceToRange(Number(m.heartRate) || 0, 60, 100) * 0.5;
-  const glucosePenalty =
-    distanceToRange(Number(m.glucoseLevel) || 0, 70, 140) * 0.15;
-  const tempPenalty =
-    distanceToRange(Number(m.temperature) || 0, 36.1, 37.5) * 8;
-  const spo2Penalty =
-    distanceToRange(Number(m.oxygenSaturation) || 0, 95, 100) * 3;
+  
+  // Glucose Penalty (Normal Fasting: 70-100)
+  const glucosePenalty = distanceToRange(Number(m.glucoseLevel) || 0, 70, 100) * 0.4;
+  
+  // Temperature Penalty (Normal: 36.1-37.2)
+  const tempPenalty = distanceToRange(Number(m.temperature) || 0, 36.1, 37.2) * 10;
+  
+  // SpO2 Penalty (Normal: 95-100)
+  const spo2Penalty = distanceToRange(Number(m.oxygenSaturation) || 0, 95, 100) * 6;
 
-  const score =
-    100 -
-    (systolicPenalty +
-      diastolicPenalty +
-      heartPenalty +
-      glucosePenalty +
-      tempPenalty +
-      spo2Penalty);
+  const totalPenalty = systolicPenalty + diastolicPenalty + heartPenalty + glucosePenalty + tempPenalty + spo2Penalty;
+  const score = 100 - totalPenalty;
 
   return Math.round(clamp(score, 0, 100));
 };
