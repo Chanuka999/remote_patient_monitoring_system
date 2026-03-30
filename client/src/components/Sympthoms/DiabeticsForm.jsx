@@ -105,44 +105,57 @@ const DiabeticsForm = () => {
     },
   ];
 
-  const getFieldStatus = (fieldName) => {
-    const value = parseFloat(form[fieldName]);
-    const range = normalRanges[fieldName];
+  const getHealthAnalysis = (name, valueStr) => {
+    if (!valueStr) return { status: "empty", condition: "Pending", riskLevel: 0, color: "border-gray-200 bg-gray-50", text: "text-gray-500", icon: "⚪", risk: "None" };
+    if (errors[name]) return { status: "error", condition: "Invalid Input", riskLevel: 0, color: "border-red-400 bg-red-50", text: "text-red-500", icon: "❌", risk: "None" };
+    
+    const val = parseFloat(valueStr);
 
-    if (!form[fieldName]) return "empty";
-    if (errors[fieldName]) return "error";
-    if (value >= range.min && value <= range.max) return "normal";
-    if (value < range.min) return "low";
-    return "high";
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "normal":
-        return "border-blue-400 bg-blue-50";
-      case "low":
-      case "high":
-        return "border-orange-400 bg-orange-50";
-      case "error":
-        return "border-red-500 bg-red-50";
-      default:
-        return "border-gray-300 bg-gray-50";
+    if (name === "Glucose") {
+      if (val < 70) return { status: "critical", condition: "Hypoglycemia", riskLevel: 4, color: "border-red-600 bg-red-100", text: "text-red-900", icon: "🆘", risk: "Emergency" };
+      if (val < 100) return { status: "normal", condition: "Normal (Fasting)", riskLevel: 0, color: "border-green-400 bg-green-50", text: "text-green-700", icon: "✅", risk: "Low" };
+      if (val < 126) return { status: "elevated", condition: "Prediabetes Range", riskLevel: 2, color: "border-yellow-400 bg-yellow-50", text: "text-yellow-700", icon: "⚠️", risk: "Moderate" };
+      return { status: "high", condition: "Diabetes Range", riskLevel: 3, color: "border-red-400 bg-red-50", text: "text-red-700", icon: "🚨", risk: "High" };
     }
-  };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "normal":
-        return "✅";
-      case "low":
-        return "📉";
-      case "high":
-        return "📈";
-      case "error":
-        return "❌";
-      default:
-        return "❓";
+    if (name === "BMI") {
+      if (val < 18.5) return { status: "low", condition: "Underweight", riskLevel: 1, color: "border-blue-400 bg-blue-50", text: "text-blue-700", icon: "📉", risk: "Low-Moderate" };
+      if (val < 25) return { status: "normal", condition: "Normal Weight", riskLevel: 0, color: "border-green-400 bg-green-50", text: "text-green-700", icon: "✅", risk: "Low" };
+      if (val < 30) return { status: "elevated", condition: "Overweight", riskLevel: 1, color: "border-yellow-400 bg-yellow-50", text: "text-yellow-700", icon: "⚠️", risk: "Moderate" };
+      if (val < 35) return { status: "high", condition: "Obese Class I", riskLevel: 2, color: "border-orange-400 bg-orange-50", text: "text-orange-700", icon: "📈", risk: "High" };
+      if (val < 40) return { status: "high", condition: "Obese Class II", riskLevel: 3, color: "border-red-400 bg-red-50", text: "text-red-700", icon: "🚨", risk: "High" };
+      return { status: "critical", condition: "Obese Class III", riskLevel: 4, color: "border-red-600 bg-red-100", text: "text-red-900", icon: "🆘", risk: "Critical" };
     }
+
+    if (name === "BloodPressure") {
+      if (val < 60) return { status: "low", condition: "Hypotension", riskLevel: 2, color: "border-blue-400 bg-blue-50", text: "text-blue-700", icon: "📉", risk: "Moderate" };
+      if (val <= 80) return { status: "normal", condition: "Normal", riskLevel: 0, color: "border-green-400 bg-green-50", text: "text-green-700", icon: "✅", risk: "Low" };
+      if (val <= 90) return { status: "high", condition: "High (Stage 1)", riskLevel: 2, color: "border-orange-400 bg-orange-50", text: "text-orange-700", icon: "📈", risk: "Moderate-High" };
+      return { status: "critical", condition: "Crisis (Stage 2)", riskLevel: 4, color: "border-red-600 bg-red-100", text: "text-red-900", icon: "🆘", risk: "Emergency" };
+    }
+
+    if (name === "Insulin") {
+      if (val < 16) return { status: "low", condition: "Low Insulin", riskLevel: 1, color: "border-blue-400 bg-blue-50", text: "text-blue-700", icon: "📉", risk: "Moderate" };
+      if (val <= 166) return { status: "normal", condition: "Normal", riskLevel: 0, color: "border-green-400 bg-green-50", text: "text-green-700", icon: "✅", risk: "Low" };
+      return { status: "high", condition: "High Insulin", riskLevel: 2, color: "border-orange-400 bg-orange-50", text: "text-orange-700", icon: "📈", risk: "Moderate" };
+    }
+
+    if (name === "SkinThickness") {
+      if (val < 15) return { status: "low", condition: "Low Thickness", riskLevel: 1, color: "border-blue-400 bg-blue-50", text: "text-blue-700", icon: "📉", risk: "Low" };
+      if (val <= 30) return { status: "normal", condition: "Normal", riskLevel: 0, color: "border-green-400 bg-green-50", text: "text-green-700", icon: "✅", risk: "Low" };
+      return { status: "high", condition: "Elevated", riskLevel: 1, color: "border-yellow-400 bg-yellow-50", text: "text-yellow-700", icon: "⚠️", risk: "Moderate" };
+    }
+
+    if (name === "Age") {
+      if (val < 45) return { status: "normal", condition: "Lower Risk Age", riskLevel: 0, color: "border-green-400 bg-green-50", text: "text-green-700", icon: "✅", risk: "Low" };
+      if (val <= 65) return { status: "elevated", condition: "Middle Age Risk", riskLevel: 1, color: "border-yellow-400 bg-yellow-50", text: "text-yellow-700", icon: "⚠️", risk: "Moderate" };
+      return { status: "high", condition: "Senior High Risk", riskLevel: 2, color: "border-orange-400 bg-orange-50", text: "text-orange-700", icon: "📈", risk: "High" };
+    }
+
+    // Default for Pregnancies and Pedigree which are more statistical than clinical buckets
+    const range = normalRanges[name];
+    if (val >= range.min && val <= range.max) return { status: "normal", condition: "Normal Range", riskLevel: 0, color: "border-green-400 bg-green-50", text: "text-green-700", icon: "✅", risk: "Low" };
+    return { status: val < range.min ? "low" : "high", condition: val < range.min ? "Below Average" : "Above Average", riskLevel: 1, color: "border-orange-400 bg-orange-50", text: "text-orange-700", icon: val < range.min ? "📉" : "📈", risk: "Moderate" };
   };
 
   const handleChange = (e) => {
@@ -239,11 +252,30 @@ const DiabeticsForm = () => {
 
       const body = data?.body || data;
       const prediction = body?.prediction || 0;
-      const riskStatus = prediction === 1 ? "HIGH RISK ⚠️" : "LOW RISK ✅";
-      const message =
-        prediction === 1
-          ? "⚠️ Diabetes risk detected! Alert sent to specialist doctors."
-          : "✅ Your diabetes status appears normal. Continue monitoring.";
+      
+      // Calculate manual risk escalation based on thresholds
+      const analyzedFields = fieldsList.map(f => getHealthAnalysis(f.name, form[f.name]));
+      const maxRiskLevel = Math.max(...analyzedFields.map(a => a.riskLevel));
+      const elevatedFields = analyzedFields.filter(a => a.riskLevel >= 1);
+
+      let riskStatus = "LOW RISK ✅";
+      let message = "✅ Your diabetes status appears normal. Continue monitoring.";
+      let predictionSource = "AI Predictive Model";
+
+      // Logic: Trust clinical vitals over AI for "High Risk" classification if vitals are perfect
+      if (prediction === 1 && maxRiskLevel === 0) {
+        riskStatus = "LOW RISK ✅";
+        message = "✅ All your clinical vitals (Glucose, BP, BMI, etc.) are within normal ranges. While the AI model noted a statistical risk factor, your current health metrics are excellent.";
+        predictionSource = "Clinical Analysis (AI Override)";
+      } else if (prediction === 1 || maxRiskLevel >= 3) {
+        riskStatus = "HIGH RISK 🚨";
+        message = "⚠️ High risk detected! Your metrics or AI prediction indicate potential clinical concerns. Alert sent to specialists.";
+        predictionSource = prediction === 1 ? "AI Diabetes Model" : "Clinical Vital Sign Thresholds";
+      } else if (maxRiskLevel >= 1) {
+        riskStatus = "MODERATE RISK ⚠️";
+        message = `⚠️ Caution: Some of your metrics are outside the normal range (${elevatedFields.map(f => f.condition).join(", ")}). Please consult a doctor.`;
+        predictionSource = "Metric Deviation Analysis";
+      }
 
       setResult({
         success: true,
@@ -251,6 +283,8 @@ const DiabeticsForm = () => {
         riskStatus: riskStatus,
         features: body?.features || features,
         message: message,
+        predictionSource: predictionSource,
+        isEscalated: (prediction === 0 && maxRiskLevel > 0)
       });
     } catch (err) {
       setResult({ error: String(err) });
@@ -291,6 +325,13 @@ const DiabeticsForm = () => {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
           gap: 1.5rem;
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 3s infinite ease-in-out;
         }
       `}</style>
 
@@ -346,74 +387,74 @@ const DiabeticsForm = () => {
         <div className="bg-white shadow-xl rounded-2xl p-10">
           <div className="field-grid mb-8">
             {fieldsList.map((field) => {
-              const status = getFieldStatus(field.name);
-              const statusColor = getStatusColor(status);
-              const statusIcon = getStatusIcon(status);
+              const analysis = getHealthAnalysis(field.name, form[field.name]);
 
               return (
                 <div
                   key={field.name}
-                  className={`border-2 rounded-lg p-6 transition ${statusColor}`}
+                  className={`border-2 rounded-xl p-5 transition-all duration-300 transform hover:scale-[1.02] shadow-sm ${analysis.color}`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-3xl">{field.icon}</span>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-3xl filter drop-shadow-sm">{field.icon}</span>
                       <div>
-                        <label className="block text-sm font-bold text-gray-800">
+                        <label className="block text-sm font-extrabold text-gray-800 uppercase tracking-tight">
                           {field.label}
                         </label>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-[10px] uppercase font-bold text-gray-500 opacity-80">
                           {field.description}
                         </p>
                       </div>
                     </div>
-                    <span className="text-2xl">{statusIcon}</span>
+                    <div className="flex flex-col items-end">
+                       <span className={`text-2xl ${analysis.status === 'critical' ? 'animate-pulse-slow' : ''}`}>{analysis.icon}</span>
+                       {form[field.name] && !errors[field.name] && (
+                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
+                           analysis.riskLevel === 0 ? 'bg-green-200 text-green-800' : 
+                           analysis.riskLevel <= 2 ? 'bg-yellow-200 text-yellow-800' :
+                           analysis.riskLevel === 3 ? 'bg-red-200 text-red-800' : 'bg-red-600 text-white'
+                         }`}>
+                           {analysis.risk} Risk
+                         </span>
+                       )}
+                    </div>
                   </div>
 
-                  <div className="relative mb-2">
+                  <div className="relative mb-3">
                     <input
                       name={field.name}
                       value={form[field.name]}
                       onChange={handleChange}
                       type="number"
-                      step={
-                        field.name === "DiabetesPedigreeFunction"
-                          ? "0.001"
-                          : "1"
-                      }
-                      className={`w-full px-4 py-3 border-2 rounded-lg bg-white text-gray-900 animate-input focus:outline-none ${
-                        status === "error"
-                          ? "border-red-500 focus:ring-2 focus:ring-red-300"
-                          : "border-gray-300 focus:ring-2 focus:ring-blue-300"
+                      step={field.name === "DiabetesPedigreeFunction" ? "0.001" : "1"}
+                      className={`w-full px-4 py-3.5 border-2 rounded-xl bg-white text-gray-900 font-bold text-lg animate-input focus:outline-none ${
+                        errors[field.name]
+                          ? "border-red-500 focus:ring-4 focus:ring-red-100"
+                          : "border-gray-200 focus:ring-4 focus:ring-blue-100"
                       }`}
                       placeholder={field.placeholder}
                     />
-                    <span className="absolute right-4 top-3 text-gray-600 font-semibold text-sm">
+                    <span className="absolute right-4 top-4 text-gray-400 font-bold text-sm">
                       {field.unit}
                     </span>
                   </div>
 
-                  {status === "normal" && form[field.name] && (
-                    <p className="text-xs text-green-600 font-semibold">
-                      ✓ Within normal range ({normalRanges[field.name].min} -{" "}
-                      {normalRanges[field.name].max})
-                    </p>
+                  {form[field.name] && !errors[field.name] && (
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <p className={`text-sm font-black tracking-tight ${analysis.text}`}>
+                          {analysis.condition}
+                        </p>
+                      </div>
+                      <p className="text-[10px] font-medium opacity-70">
+                        Goal: {normalRanges[field.name].min} - {normalRanges[field.name].max} {field.unit}
+                      </p>
+                    </div>
                   )}
-                  {status === "low" && form[field.name] && (
-                    <p className="text-xs text-orange-600 font-semibold">
-                      Below normal ({normalRanges[field.name].min} -{" "}
-                      {normalRanges[field.name].max})
-                    </p>
-                  )}
-                  {status === "high" && form[field.name] && (
-                    <p className="text-xs text-orange-600 font-semibold">
-                      Above normal ({normalRanges[field.name].min} -{" "}
-                      {normalRanges[field.name].max})
-                    </p>
-                  )}
+                  
                   {errors[field.name] && (
-                    <p className="text-red-600 text-xs font-semibold mt-1">
-                      {errors[field.name]}
+                    <p className="text-red-600 text-xs font-bold mt-2 flex items-center">
+                      <span className="mr-1">⚠️</span> {errors[field.name]}
                     </p>
                   )}
                 </div>
@@ -453,37 +494,53 @@ const DiabeticsForm = () => {
           {/* Result */}
           {result && (
             <div
-              className={`mt-6 p-6 border-l-4 rounded-lg animate-form-card ${
+              className={`mt-6 p-6 border-l-8 rounded-2xl shadow-lg animate-form-card ${
                 result.error
                   ? "bg-red-50 border-red-600"
-                  : result.prediction === 1
-                    ? "bg-red-50 border-red-600"
-                    : "bg-green-50 border-green-600"
+                  : result.riskStatus.includes("HIGH")
+                    ? "bg-red-50 border-red-500"
+                    : result.riskStatus.includes("MODERATE")
+                      ? "bg-orange-50 border-orange-500"
+                      : "bg-green-50 border-green-500"
               }`}
             >
               {result.error ? (
-                <div>
-                  <h4 className="text-lg font-bold text-red-700 mb-2">
-                    ⚠️ An Error Occurred
-                  </h4>
-                  <p className="text-red-600">{result.error}</p>
+                <div className="flex items-center space-x-3">
+                  <span className="text-3xl">⚠️</span>
+                  <div>
+                    <h4 className="text-lg font-bold text-red-700">
+                      An Error Occurred
+                    </h4>
+                    <p className="text-red-600">{result.error}</p>
+                  </div>
                 </div>
               ) : (
                 <div>
-                  <h4
-                    className={`text-2xl font-bold mb-4 ${
-                      result.prediction === 1
-                        ? "text-red-700"
-                        : "text-green-700"
-                    }`}
-                  >
-                    {result.riskStatus}
-                  </h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4
+                      className={`text-3xl font-black ${
+                        result.riskStatus.includes("HIGH")
+                          ? "text-red-700"
+                          : result.riskStatus.includes("MODERATE")
+                            ? "text-orange-700"
+                            : "text-green-700"
+                      }`}
+                    >
+                      {result.riskStatus}
+                    </h4>
+                    <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                      result.riskStatus.includes("HIGH") ? "bg-red-200 text-red-800" : 
+                      result.riskStatus.includes("MODERATE") ? "bg-orange-200 text-orange-800" : "bg-green-200 text-green-800"
+                    }`}>
+                      {result.predictionSource}
+                    </div>
+                  </div>
+
                   <p className="text-lg mb-4 text-gray-800 font-semibold">
                     {result.message}
                   </p>
 
-                  {result.prediction === 1 && (
+                  {result.riskStatus.includes("HIGH") && (
                     <div className="bg-red-100 border-2 border-red-400 rounded-lg p-4 mb-4">
                       <p className="text-red-800 font-bold">
                         📧 Alert has been sent to specialist doctors
@@ -496,57 +553,55 @@ const DiabeticsForm = () => {
 
                   <div className="bg-white border-2 border-gray-200 p-4 rounded-lg">
                     <p className="font-bold text-gray-800 mb-3">
-                      📋 Your Recorded Data:
+                      📋 Your Recorded Measurements:
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-600">Pregnancies</p>
-                        <p className="font-bold text-blue-700">
+                      <div className="bg-blue-50 p-2 rounded text-center">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase">Pregnancies</p>
+                        <p className="font-black text-blue-700">
                           {result.features?.[0]}
                         </p>
                       </div>
-                      <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-600">Glucose</p>
-                        <p className="font-bold text-blue-700">
-                          {result.features?.[1]} mg/dL
+                      <div className="bg-blue-50 p-2 rounded text-center">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase">Glucose</p>
+                        <p className="font-black text-blue-700">
+                          {result.features?.[1]} <span className="text-[9px]">mg/dL</span>
                         </p>
                       </div>
-                      <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-600">Blood Pressure</p>
-                        <p className="font-bold text-blue-700">
-                          {result.features?.[2]} mmHg
+                      <div className="bg-blue-50 p-2 rounded text-center">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase">BP (D)</p>
+                        <p className="font-black text-blue-700">
+                          {result.features?.[2]} <span className="text-[9px]">mmHg</span>
                         </p>
                       </div>
-                      <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-600">Skin Thickness</p>
-                        <p className="font-bold text-blue-700">
-                          {result.features?.[3]} mm
+                      <div className="bg-blue-50 p-2 rounded text-center">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase">Skin</p>
+                        <p className="font-black text-blue-700">
+                          {result.features?.[3]} <span className="text-[9px]">mm</span>
                         </p>
                       </div>
-                      <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-600">Insulin</p>
-                        <p className="font-bold text-blue-700">
-                          {result.features?.[4]} μU/ml
+                      <div className="bg-blue-50 p-2 rounded text-center">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase">Insulin</p>
+                        <p className="font-black text-blue-700">
+                          {result.features?.[4]} <span className="text-[9px]">μU/ml</span>
                         </p>
                       </div>
-                      <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-600">BMI</p>
-                        <p className="font-bold text-blue-700">
+                      <div className="bg-blue-50 p-2 rounded text-center">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase">BMI</p>
+                        <p className="font-black text-blue-700">
                           {result.features?.[5]}
                         </p>
                       </div>
-                      <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-600">
-                          Pedigree Function
-                        </p>
-                        <p className="font-bold text-blue-700">
+                      <div className="bg-blue-50 p-2 rounded text-center">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase">Pedigree</p>
+                        <p className="font-black text-blue-700">
                           {result.features?.[6]}
                         </p>
                       </div>
-                      <div className="bg-blue-50 p-3 rounded">
-                        <p className="text-sm text-gray-600">Age</p>
-                        <p className="font-bold text-blue-700">
-                          {result.features?.[7]} years
+                      <div className="bg-blue-50 p-2 rounded text-center">
+                        <p className="text-[10px] text-gray-600 font-bold uppercase">Age</p>
+                        <p className="font-black text-blue-700">
+                          {result.features?.[7]} <span className="text-[9px]">yr</span>
                         </p>
                       </div>
                     </div>

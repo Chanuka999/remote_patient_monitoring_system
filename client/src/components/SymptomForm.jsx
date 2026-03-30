@@ -44,14 +44,124 @@ const SymptomForm = () => {
     setSelectedSymptoms((prev) =>
       prev.includes(symptomId)
         ? prev.filter((s) => s !== symptomId)
-        : [...prev, symptomId]
+        : [...prev, symptomId],
     );
   };
+
+  // Field meta for UI display
+  const fieldsList = [
+    {
+      name: "systolic",
+      label: "Systolic BP",
+      unit: "mmHg",
+      icon: "🩸",
+      description: "Systolic blood pressure",
+    },
+    {
+      name: "diastolic",
+      label: "Diastolic BP",
+      unit: "mmHg",
+      icon: "🩸",
+      description: "Diastolic blood pressure",
+    },
+    {
+      name: "heartRate",
+      label: "Heart Rate",
+      unit: "bpm",
+      icon: "❤️",
+      description: "Heart beats per minute",
+    },
+    {
+      name: "glucoseLevel",
+      label: "Glucose Level",
+      unit: "mg/dL",
+      icon: "🍬",
+      description: "Blood glucose level",
+    },
+    {
+      name: "temperature",
+      label: "Temperature",
+      unit: "°C",
+      icon: "🌡️",
+      description: "Body temperature",
+    },
+    {
+      name: "oxygenSaturation",
+      label: "Oxygen Saturation",
+      unit: "%",
+      icon: "🫁",
+      description: "Blood oxygen saturation",
+    },
+  ];
+
+  // Analysis function for each field
+  function getHealthAnalysis(name, valueStr) {
+    if (!valueStr)
+      return {
+        status: "empty",
+        condition: "Pending",
+        riskLevel: 0,
+        color: "border-gray-200 bg-gray-50",
+        text: "text-gray-500",
+        icon: "⚪",
+        risk: "None",
+      };
+    if (errors[name])
+      return {
+        status: "error",
+        condition: "Invalid Input",
+        riskLevel: 0,
+        color: "border-red-400 bg-red-50",
+        text: "text-red-500",
+        icon: "❌",
+        risk: "None",
+      };
+    const val = parseFloat(valueStr);
+    const range = RANGES[name];
+    if (!range)
+      return {
+        status: "filled",
+        condition: "Filled",
+        riskLevel: 0,
+        color: "border-orange-400 bg-orange-50",
+        text: "text-orange-700",
+        icon: "✅",
+        risk: "Info",
+      };
+    if (val < range.min)
+      return {
+        status: "low",
+        condition: "Below Normal",
+        riskLevel: 1,
+        color: "border-yellow-400 bg-yellow-50",
+        text: "text-yellow-700",
+        icon: "📉",
+        risk: "Low",
+      };
+    if (val > range.max)
+      return {
+        status: "high",
+        condition: "Above Normal",
+        riskLevel: 2,
+        color: "border-red-400 bg-red-50",
+        text: "text-red-700",
+        icon: "📈",
+        risk: "High",
+      };
+    return {
+      status: "normal",
+      condition: "Within normal range",
+      riskLevel: 0,
+      color: "border-green-400 bg-green-50",
+      text: "text-green-700",
+      icon: "✅",
+      risk: "Normal",
+    };
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-
     setErrors((prev) => {
       const next = { ...prev };
       const num = Number(value);
@@ -61,9 +171,8 @@ const SymptomForm = () => {
         RANGES[name] &&
         (num < RANGES[name].min || num > RANGES[name].max)
       )
-        next[
-          name
-        ] = `Value must be between ${RANGES[name].min} and ${RANGES[name].max}`;
+        next[name] =
+          `Value must be between ${RANGES[name].min} and ${RANGES[name].max}`;
       else delete next[name];
       return next;
     });
@@ -86,9 +195,8 @@ const SymptomForm = () => {
       const num = Number(v);
       if (v === "" || isNaN(num)) nextErrors[k] = "Please enter a valid number";
       else if (RANGES[k] && (num < RANGES[k].min || num > RANGES[k].max))
-        nextErrors[
-          k
-        ] = `Value must be between ${RANGES[k].min} and ${RANGES[k].max}`;
+        nextErrors[k] =
+          `Value must be between ${RANGES[k].min} and ${RANGES[k].max}`;
     });
 
     if (selectedSymptoms.length === 0) {
@@ -236,34 +344,91 @@ const SymptomForm = () => {
             </div>
           </div>
 
-          {/* Health Measurements */}
+          {/* Health Measurements - Card UI */}
           <div className="mb-8">
             <label className="block text-lg font-semibold text-gray-900 mb-4">
               Health Measurements:
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.keys(formData).map((key) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {key.replace(/([A-Z])/g, " $1").toUpperCase()}
-                  </label>
-                  <input
-                    type="number"
-                    name={key}
-                    value={formData[key]}
-                    onChange={handleInputChange}
-                    placeholder={`${RANGES[key].min} - ${RANGES[key].max}`}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
-                      errors[key]
-                        ? "border-red-500 bg-red-50"
-                        : "border-gray-300"
-                    }`}
-                  />
-                  {errors[key] && (
-                    <p className="text-red-600 text-xs mt-1">{errors[key]}</p>
-                  )}
-                </div>
-              ))}
+              {fieldsList.map((field) => {
+                const analysis = getHealthAnalysis(
+                  field.name,
+                  formData[field.name],
+                );
+                return (
+                  <div
+                    key={field.name}
+                    className={`border-2 rounded-xl p-5 transition-all duration-300 transform hover:scale-[1.02] shadow-sm ${analysis.color}`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{field.icon}</span>
+                        <div>
+                          <label className="block text-sm font-extrabold text-gray-800 uppercase tracking-tight">
+                            {field.label}
+                          </label>
+                          <p className="text-[10px] uppercase font-bold text-gray-500 opacity-80">
+                            {field.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className={`text-xl`}>{analysis.icon}</span>
+                        {formData[field.name] && !errors[field.name] && (
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
+                              analysis.riskLevel === 0
+                                ? "bg-green-200 text-green-800"
+                                : analysis.riskLevel === 1
+                                  ? "bg-yellow-200 text-yellow-800"
+                                  : "bg-red-200 text-red-800"
+                            }`}
+                          >
+                            {analysis.risk} Risk
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="relative mb-2">
+                      <input
+                        name={field.name}
+                        value={formData[field.name]}
+                        onChange={handleInputChange}
+                        type="number"
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
+                          errors[field.name]
+                            ? "border-red-500 bg-red-50"
+                            : "border-gray-300"
+                        }`}
+                        placeholder={`${RANGES[field.name].min} - ${RANGES[field.name].max}`}
+                      />
+                      <span className="absolute right-4 top-2 text-gray-400 font-bold text-sm">
+                        {field.unit}
+                      </span>
+                    </div>
+                    {formData[field.name] && !errors[field.name] && (
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <p
+                            className={`text-xs font-black tracking-tight ${analysis.text}`}
+                          >
+                            {analysis.condition}
+                          </p>
+                        </div>
+                        <p className="text-[10px] font-medium opacity-70">
+                          Goal: {RANGES[field.name].min} -{" "}
+                          {RANGES[field.name].max} {field.unit}
+                        </p>
+                      </div>
+                    )}
+                    {errors[field.name] && (
+                      <p className="text-red-600 text-xs font-bold mt-2 flex items-center">
+                        <span className="mr-1">⚠️</span> {errors[field.name]}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
