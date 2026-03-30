@@ -8,6 +8,11 @@ const HIDE_NAV_PATHS = [
   "/patientDashboard",
   "/doctorDashboard",
   "/adminDashboard",
+  "/hypertension",
+  "/Diabetics",
+  "/Sympthoms",
+  "/SymptomForm",
+  "/patientDashboardForm",
 ];
 
 const DEFAULTS = {

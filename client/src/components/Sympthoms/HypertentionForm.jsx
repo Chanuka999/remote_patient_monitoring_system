@@ -126,51 +126,223 @@ const HypertentionForm = () => {
     },
   ];
 
-  const getFieldStatus = (fieldName) => {
-    const value = form[fieldName];
-
-    if (!value && value !== 0) return "empty";
-    if (errors[fieldName]) return "error";
-    if (numericFields.has(fieldName)) {
-      const num = parseFloat(value);
-      const range = RANGES[fieldName];
-      if (num >= range.min && num <= range.max) return "normal";
-      if (num < range.min) return "low";
-      return "high";
+  // Analysis function for each field (like DiabeticsForm/SymptomForm)
+  function getHealthAnalysis(field, valueStr) {
+    if (!valueStr)
+      return {
+        status: "empty",
+        condition: "Pending",
+        riskLevel: 0,
+        color: "border-gray-200 bg-gray-50",
+        text: "text-gray-500",
+        icon: "⚪",
+        risk: "None",
+      };
+    if (errors[field.name])
+      return {
+        status: "error",
+        condition: "Invalid Input",
+        riskLevel: 0,
+        color: "border-red-400 bg-red-50",
+        text: "text-red-500",
+        icon: "❌",
+        risk: "None",
+      };
+    if (field.isNumeric) {
+      const val = parseFloat(valueStr);
+      // Strict clinical ranges for risk escalation
+      if (field.name === "bmi") {
+        if (val < 18.5)
+          return {
+            status: "low",
+            condition: "Underweight",
+            riskLevel: 1,
+            color: "border-yellow-400 bg-yellow-50",
+            text: "text-yellow-700",
+            icon: "📉",
+            risk: "Low",
+          };
+        if (val >= 18.5 && val < 25)
+          return {
+            status: "normal",
+            condition: "Normal BMI",
+            riskLevel: 0,
+            color: "border-green-400 bg-green-50",
+            text: "text-green-700",
+            icon: "✅",
+            risk: "Normal",
+          };
+        if (val >= 25 && val < 30)
+          return {
+            status: "moderate",
+            condition: "Overweight",
+            riskLevel: 1,
+            color: "border-yellow-400 bg-yellow-50",
+            text: "text-yellow-700",
+            icon: "⚠️",
+            risk: "Moderate",
+          };
+        if (val >= 30 && val < 40)
+          return {
+            status: "high",
+            condition: "Obese",
+            riskLevel: 2,
+            color: "border-red-400 bg-red-50",
+            text: "text-red-700",
+            icon: "📈",
+            risk: "High",
+          };
+        if (val >= 40)
+          return {
+            status: "critical",
+            condition: "Severely Obese",
+            riskLevel: 3,
+            color: "border-red-600 bg-red-100",
+            text: "text-red-900",
+            icon: "🆘",
+            risk: "Critical",
+          };
+      }
+      if (field.name === "sleepDuration") {
+        if (val < 4)
+          return {
+            status: "high",
+            condition: "Severely Low Sleep",
+            riskLevel: 2,
+            color: "border-red-400 bg-red-50",
+            text: "text-red-700",
+            icon: "📉",
+            risk: "High",
+          };
+        if (val >= 4 && val < 6)
+          return {
+            status: "moderate",
+            condition: "Low Sleep",
+            riskLevel: 1,
+            color: "border-yellow-400 bg-yellow-50",
+            text: "text-yellow-700",
+            icon: "⚠️",
+            risk: "Moderate",
+          };
+        if (val >= 6 && val <= 9)
+          return {
+            status: "normal",
+            condition: "Normal Sleep",
+            riskLevel: 0,
+            color: "border-green-400 bg-green-50",
+            text: "text-green-700",
+            icon: "✅",
+            risk: "Normal",
+          };
+        if (val > 9 && val <= 10)
+          return {
+            status: "moderate",
+            condition: "Long Sleep",
+            riskLevel: 1,
+            color: "border-yellow-400 bg-yellow-50",
+            text: "text-yellow-700",
+            icon: "⚠️",
+            risk: "Moderate",
+          };
+        if (val > 10)
+          return {
+            status: "high",
+            condition: "Excessive Sleep",
+            riskLevel: 2,
+            color: "border-red-400 bg-red-50",
+            text: "text-red-700",
+            icon: "📈",
+            risk: "High",
+          };
+      }
+      if (field.name === "saltIntake") {
+        if (val < 3)
+          return {
+            status: "moderate",
+            condition: "Low Salt Intake",
+            riskLevel: 1,
+            color: "border-yellow-400 bg-yellow-50",
+            text: "text-yellow-700",
+            icon: "⚠️",
+            risk: "Moderate",
+          };
+        if (val >= 3 && val <= 6)
+          return {
+            status: "normal",
+            condition: "Normal Salt Intake",
+            riskLevel: 0,
+            color: "border-green-400 bg-green-50",
+            text: "text-green-700",
+            icon: "✅",
+            risk: "Normal",
+          };
+        if (val > 6 && val <= 10)
+          return {
+            status: "moderate",
+            condition: "High Salt Intake",
+            riskLevel: 1,
+            color: "border-yellow-400 bg-yellow-50",
+            text: "text-yellow-700",
+            icon: "⚠️",
+            risk: "Moderate",
+          };
+        if (val > 10)
+          return {
+            status: "high",
+            condition: "Excessive Salt Intake",
+            riskLevel: 2,
+            color: "border-red-400 bg-red-50",
+            text: "text-red-700",
+            icon: "📈",
+            risk: "High",
+          };
+      }
+      // Default fallback for other numeric fields
+      const range = RANGES[field.name];
+      if (val < range.min)
+        return {
+          status: "low",
+          condition: "Below normal range",
+          riskLevel: 1,
+          color: "border-yellow-400 bg-yellow-50",
+          text: "text-yellow-700",
+          icon: "📉",
+          risk: "Low",
+        };
+      if (val > range.max)
+        return {
+          status: "high",
+          condition: "Above normal range",
+          riskLevel: 2,
+          color: "border-red-400 bg-red-50",
+          text: "text-red-700",
+          icon: "📈",
+          risk: "High",
+        };
+      return {
+        status: "normal",
+        condition: "Within normal range",
+        riskLevel: 0,
+        color: "border-green-400 bg-green-50",
+        text: "text-green-700",
+        icon: "✅",
+        risk: "Normal",
+      };
+    } else {
+      // Non-numeric fields
+      return {
+        status: valueStr ? "filled" : "empty",
+        condition: valueStr ? "Information provided" : "Pending",
+        riskLevel: 0,
+        color: valueStr
+          ? "border-orange-400 bg-orange-50"
+          : "border-gray-200 bg-gray-50",
+        text: valueStr ? "text-orange-700" : "text-gray-500",
+        icon: valueStr ? "✅" : "❓",
+        risk: valueStr ? "Info" : "None",
+      };
     }
-    return value ? "filled" : "empty";
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "normal":
-      case "filled":
-        return "border-orange-400 bg-orange-50";
-      case "low":
-      case "high":
-        return "border-red-400 bg-red-50";
-      case "error":
-        return "border-red-600 bg-red-100";
-      default:
-        return "border-gray-300 bg-gray-50";
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "normal":
-      case "filled":
-        return "✅";
-      case "low":
-        return "📉";
-      case "high":
-        return "📈";
-      case "error":
-        return "❌";
-      default:
-        return "❓";
-    }
-  };
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -294,11 +466,38 @@ const HypertentionForm = () => {
 
       const body = mlData?.body || mlData;
       const prediction = body?.prediction || 0;
-      const riskStatus = prediction === 1 ? "HIGH RISK ⚠️" : "LOW RISK ✅";
-      const message =
-        prediction === 1
-          ? "⚠️ Hypertension risk detected! Alert sent to specialist doctors."
-          : "✅ Your hypertension status appears normal. Continue monitoring.";
+
+      // Manual risk escalation logic (like DiabeticsForm)
+      const analyzedFields = fieldsList
+        .filter((f) => f.isNumeric)
+        .map((f) => getHealthAnalysis(f, form[f.name]));
+      const maxRiskLevel = Math.max(...analyzedFields.map((a) => a.riskLevel));
+      const elevatedFields = analyzedFields.filter((a) => a.riskLevel >= 1);
+
+      let riskStatus = "LOW RISK ✅";
+      let message =
+        "✅ Your hypertension status appears normal. Continue monitoring.";
+      let predictionSource = "AI Predictive Model";
+
+      // If all clinical vitals are normal but AI says high risk, trust clinical
+      if (prediction === 1 && maxRiskLevel === 0) {
+        riskStatus = "LOW RISK ✅";
+        message =
+          "✅ All your clinical vitals are within normal ranges. While the AI model noted a statistical risk factor, your current health metrics are excellent.";
+        predictionSource = "Clinical Analysis (AI Override)";
+      } else if (prediction === 1 || maxRiskLevel >= 2) {
+        riskStatus = "HIGH RISK ⚠️";
+        message =
+          "⚠️ Hypertension risk detected! Alert sent to specialist doctors.";
+        predictionSource =
+          prediction === 1
+            ? "AI Hypertension Model"
+            : "Clinical Vital Sign Thresholds";
+      } else if (maxRiskLevel === 1) {
+        riskStatus = "MODERATE RISK ⚠️";
+        message = `⚠️ Caution: Some of your metrics are outside the normal range (${elevatedFields.map((f) => f.condition).join(", ")}). Please consult a doctor.`;
+        predictionSource = "Metric Deviation Analysis";
+      }
 
       setResult({
         success: true,
@@ -306,6 +505,8 @@ const HypertentionForm = () => {
         riskStatus: riskStatus,
         features: body?.features || features,
         message: message,
+        predictionSource: predictionSource,
+        isEscalated: prediction === 0 && maxRiskLevel > 0,
       });
     } catch (err) {
       setResult({ error: String(err) });
@@ -400,14 +601,11 @@ const HypertentionForm = () => {
         <div className="bg-white shadow-xl rounded-2xl p-10">
           <div className="field-grid mb-8">
             {fieldsList.map((field) => {
-              const status = getFieldStatus(field.name);
-              const statusColor = getStatusColor(status);
-              const statusIcon = getStatusIcon(status);
-
+              const analysis = getHealthAnalysis(field, form[field.name]);
               return (
                 <div
                   key={field.name}
-                  className={`border-2 rounded-lg p-6 transition ${statusColor}`}
+                  className={`border-2 rounded-xl p-6 transition-all duration-300 transform hover:scale-[1.02] shadow-sm ${analysis.color}`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -421,7 +619,7 @@ const HypertentionForm = () => {
                         </p>
                       </div>
                     </div>
-                    <span className="text-2xl">{statusIcon}</span>
+                    <span className="text-2xl">{analysis.icon}</span>
                   </div>
 
                   <div className="relative mb-2">
@@ -432,7 +630,7 @@ const HypertentionForm = () => {
                       type={field.isNumeric ? "number" : "text"}
                       step={field.name === "sleepDuration" ? "0.1" : "1"}
                       className={`w-full px-4 py-3 border-2 rounded-lg bg-white text-gray-900 animate-input focus:outline-none ${
-                        status === "error"
+                        analysis.status === "error"
                           ? "border-red-500 focus:ring-2 focus:ring-red-300"
                           : "border-gray-300 focus:ring-2 focus:ring-orange-300"
                       }`}
@@ -444,33 +642,37 @@ const HypertentionForm = () => {
                   </div>
 
                   {field.isNumeric &&
-                    status === "normal" &&
+                    analysis.status === "normal" &&
                     form[field.name] && (
                       <p className="text-xs text-green-600 font-semibold">
-                        ✓ Within normal range ({RANGES[field.name].min} -{" "}
+                        ✓ {analysis.condition} ({RANGES[field.name].min} -{" "}
                         {RANGES[field.name].max})
                       </p>
                     )}
-                  {field.isNumeric && status === "low" && form[field.name] && (
+                  {field.isNumeric &&
+                    analysis.status === "low" &&
+                    form[field.name] && (
+                      <p className="text-xs text-yellow-700 font-semibold">
+                        {analysis.condition} ({RANGES[field.name].min} -{" "}
+                        {RANGES[field.name].max})
+                      </p>
+                    )}
+                  {field.isNumeric &&
+                    analysis.status === "high" &&
+                    form[field.name] && (
+                      <p className="text-xs text-red-600 font-semibold">
+                        {analysis.condition} ({RANGES[field.name].min} -{" "}
+                        {RANGES[field.name].max})
+                      </p>
+                    )}
+                  {!field.isNumeric && analysis.status === "filled" && (
                     <p className="text-xs text-orange-600 font-semibold">
-                      Below normal ({RANGES[field.name].min} -{" "}
-                      {RANGES[field.name].max})
-                    </p>
-                  )}
-                  {field.isNumeric && status === "high" && form[field.name] && (
-                    <p className="text-xs text-red-600 font-semibold">
-                      Above normal ({RANGES[field.name].min} -{" "}
-                      {RANGES[field.name].max})
-                    </p>
-                  )}
-                  {!field.isNumeric && status === "filled" && (
-                    <p className="text-xs text-orange-600 font-semibold">
-                      ✓ Information provided
+                      ✓ {analysis.condition}
                     </p>
                   )}
                   {errors[field.name] && (
-                    <p className="text-red-600 text-xs font-semibold mt-1">
-                      {errors[field.name]}
+                    <p className="text-red-600 text-xs font-semibold mt-1 flex items-center">
+                      <span className="mr-1">⚠️</span> {errors[field.name]}
                     </p>
                   )}
                 </div>
@@ -540,16 +742,17 @@ const HypertentionForm = () => {
                     {result.message}
                   </p>
 
-                  {result.prediction === 1 && (
-                    <div className="bg-red-100 border-2 border-red-400 rounded-lg p-4 mb-4">
-                      <p className="text-red-800 font-bold">
-                        📧 Alert has been sent to specialist doctors
-                      </p>
-                      <p className="text-red-700 text-sm mt-2">
-                        A medical specialist will review your data shortly
-                      </p>
-                    </div>
-                  )}
+                  {result.riskStatus &&
+                    result.riskStatus.includes("HIGH RISK") && (
+                      <div className="bg-red-100 border-2 border-red-400 rounded-lg p-4 mb-4">
+                        <p className="text-red-800 font-bold">
+                          📧 Alert has been sent to specialist doctors
+                        </p>
+                        <p className="text-red-700 text-sm mt-2">
+                          A medical specialist will review your data shortly
+                        </p>
+                      </div>
+                    )}
 
                   <div className="bg-white border-2 border-gray-200 p-4 rounded-lg">
                     <p className="font-bold text-gray-800 mb-3">
