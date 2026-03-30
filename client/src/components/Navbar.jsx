@@ -63,8 +63,28 @@ const Navbar = () => {
     navigate("/login");
   };
 
+  // Get user role for dashboard redirect
+  let userRole = null;
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    userRole = user?.role || null;
+  } catch {
+    userRole = null;
+  }
+
+  function getDashboardPath(role) {
+    if (!role) return "/";
+    if (role === "admin") return "/adminDashboard";
+    if (role === "doctor") return "/doctorDashboard";
+    return "/patientDashboard";
+  }
+
   const navLinks = [
-    { key: "home", to: "/", icon: "🏠" },
+    {
+      key: "home",
+      to: isAuthenticated ? getDashboardPath(userRole) : "/",
+      icon: "🏠",
+    },
     { key: "about", to: "/about", icon: "ℹ️" },
     { key: "contact", to: "/contact", icon: "📞" },
     { key: "hospital", to: "/hospital", icon: "🏥" },
@@ -232,7 +252,9 @@ const Navbar = () => {
                     {({ isActive }) => (
                       <>
                         <span className="text-xl">{link.icon}</span>
-                        <span className="flex-1">{link.label || t(link.key)}</span>
+                        <span className="flex-1">
+                          {link.label || t(link.key)}
+                        </span>
                         {isActive && (
                           <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
                         )}
