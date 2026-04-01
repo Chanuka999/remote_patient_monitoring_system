@@ -12,7 +12,19 @@ export const registerUser = async (req, res) => {
   try {
     const body = req.body || {};
     console.log("/register body:", body);
-    const { name, email, password, role, number, symptoms } = body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      number,
+      symptoms,
+      age,
+      height,
+      weight,
+      gender,
+      address,
+    } = body;
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -63,12 +75,63 @@ export const registerUser = async (req, res) => {
         .filter(Boolean);
     }
 
+    const normalizedRole = role || "patient";
+
+    let parsedAge = null;
+    let parsedHeight = null;
+    let parsedWeight = null;
+    let normalizedGender = "";
+    let normalizedAddress = "";
+
+    if (normalizedRole === "patient") {
+      const missingFields = [];
+      if (age === undefined || age === "") missingFields.push("age");
+      if (height === undefined || height === "") missingFields.push("height");
+      if (weight === undefined || weight === "") missingFields.push("weight");
+      if (!String(gender || "").trim()) missingFields.push("gender");
+      if (!String(address || "").trim()) missingFields.push("address");
+
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Patient registration requires: ${missingFields.join(", ")}`,
+        });
+      }
+
+      parsedAge = Number(age);
+      parsedHeight = Number(height);
+      parsedWeight = Number(weight);
+
+      if (
+        !Number.isFinite(parsedAge) ||
+        !Number.isFinite(parsedHeight) ||
+        !Number.isFinite(parsedWeight) ||
+        parsedAge <= 0 ||
+        parsedHeight <= 0 ||
+        parsedWeight <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Patient age, height, and weight must be valid positive numbers",
+        });
+      }
+
+      normalizedGender = String(gender).trim();
+      normalizedAddress = String(address).trim();
+    }
+
     const user = new User({
       name,
       email: String(email).toLowerCase(),
       password: hash,
-      role: role || "patient",
+      role: normalizedRole,
       number: number || undefined,
+      gender: normalizedGender,
+      address: normalizedAddress,
+      age: parsedAge,
+      height: parsedHeight,
+      weight: parsedWeight,
       symptoms: normalizedSymptoms,
     });
 
@@ -91,6 +154,11 @@ export const registerUser = async (req, res) => {
         name: savedUser.name,
         email: savedUser.email,
         role: savedUser.role,
+        age: savedUser.age,
+        height: savedUser.height,
+        weight: savedUser.weight,
+        gender: savedUser.gender || "",
+        address: savedUser.address || "",
         symptoms: savedUser.symptoms || [],
       },
       token,

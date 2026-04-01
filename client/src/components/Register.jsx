@@ -13,6 +13,11 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
   const [number, setNumber] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [address, setAddress] = useState("");
   const [symptoms, setSymptoms] = useState([]);
   const [error, setError] = useState("");
 
@@ -25,6 +30,8 @@ const Register = () => {
         : [...prev, symptom],
     );
   };
+
+  const isPatient = role === "patient";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,6 +46,15 @@ const Register = () => {
         role,
         number,
         symptoms,
+        ...(isPatient
+          ? {
+              height,
+              weight,
+              age,
+              gender,
+              address,
+            }
+          : {}),
       });
 
       setError("");
@@ -202,6 +218,127 @@ const Register = () => {
                   }`}
                 />
               </div>
+
+              {isPatient && (
+                <>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="height"
+                      className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}
+                    >
+                      Height (cm)
+                    </label>
+                    <input
+                      id="height"
+                      type="number"
+                      min="1"
+                      required={isPatient}
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      placeholder="e.g. 170"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                        isDark
+                          ? "border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-sky-500"
+                          : "border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-sky-500"
+                      }`}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="weight"
+                      className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}
+                    >
+                      Weight (kg)
+                    </label>
+                    <input
+                      id="weight"
+                      type="number"
+                      min="1"
+                      step="0.1"
+                      required={isPatient}
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      placeholder="e.g. 65"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                        isDark
+                          ? "border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-sky-500"
+                          : "border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-sky-500"
+                      }`}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="age"
+                      className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}
+                    >
+                      Age
+                    </label>
+                    <input
+                      id="age"
+                      type="number"
+                      min="1"
+                      required={isPatient}
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      placeholder="e.g. 45"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                        isDark
+                          ? "border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-sky-500"
+                          : "border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-sky-500"
+                      }`}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="gender"
+                      className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}
+                    >
+                      Gender
+                    </label>
+                    <select
+                      id="gender"
+                      required={isPatient}
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                        isDark
+                          ? "border-slate-700 bg-slate-800 text-white focus:border-sky-500"
+                          : "border-slate-300 bg-slate-50 text-slate-900 focus:border-sky-500"
+                      }`}
+                    >
+                      <option value="">Select gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <label
+                      htmlFor="address"
+                      className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}
+                    >
+                      Address
+                    </label>
+                    <textarea
+                      id="address"
+                      rows="3"
+                      required={isPatient}
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Enter your address"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                        isDark
+                          ? "border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-sky-500"
+                          : "border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-sky-500"
+                      }`}
+                    />
+                  </div>
+                </>
+              )}
 
               {(role === "patient" || role === "doctor") && (
                 <div
