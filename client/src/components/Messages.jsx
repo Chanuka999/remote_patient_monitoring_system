@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import SectionSidebar from "./SectionSidebar";
 
 const Messages = () => {
   const navigate = useNavigate();
@@ -356,239 +357,251 @@ const Messages = () => {
         }
       `}</style>
 
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">
-            💬{" "}
-            {currentUser?.role === "doctor"
-              ? "Patient Messages"
-              : "Doctor Messages"}
-          </h1>
-          <p className="text-slate-300">
-            {currentUser?.role === "doctor"
-              ? "View and respond to messages from your patients"
-              : "Communicate with your healthcare providers"}
-          </p>
-        </div>
+      <div className="mx-auto w-full max-w-[1600px] px-2 sm:px-3 lg:px-4">
+        <div className="grid gap-4 lg:grid-cols-[300px_1fr] items-start">
+          <SectionSidebar />
+          <div>
+            <div className="mb-6">
+              <h1 className="text-4xl font-bold text-white mb-2">
+                💬{" "}
+                {currentUser?.role === "doctor"
+                  ? "Patient Messages"
+                  : "Doctor Messages"}
+              </h1>
+              <p className="text-slate-300">
+                {currentUser?.role === "doctor"
+                  ? "View and respond to messages from your patients"
+                  : "Communicate with your healthcare providers"}
+              </p>
+            </div>
 
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="inline-block animate-spin text-5xl mb-4">⏳</div>
-            <p className="text-white text-lg">Loading your doctors...</p>
-          </div>
-        ) : (
-          <>
-            <div className="messages-container">
-              {/* Sidebar - Conversations List */}
-              <div className="messages-sidebar animate-slide-in">
-                <div className="p-4 border-b border-gray-200">
-                  <input
-                    type="text"
-                    placeholder="Search doctors..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
+            {loading ? (
+              <div className="text-center py-20">
+                <div className="inline-block animate-spin text-5xl mb-4">
+                  ⏳
                 </div>
+                <p className="text-white text-lg">Loading your doctors...</p>
+              </div>
+            ) : (
+              <>
+                <div className="messages-container">
+                  {/* Sidebar - Conversations List */}
+                  <div className="messages-sidebar animate-slide-in">
+                    <div className="p-4 border-b border-gray-200">
+                      <input
+                        type="text"
+                        placeholder="Search doctors..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
 
-                <div className="conversation-list">
-                  {filteredContacts.length > 0 ? (
-                    filteredContacts.map((contact) => (
-                      <div
-                        key={contact._id}
-                        onClick={() => handleSelectConversation(contact)}
-                        className={`px-4 py-3 cursor-pointer border-b border-gray-100 transition ${
-                          selectedConversation?.id === contact._id
-                            ? "bg-blue-50 border-l-4 border-l-blue-500"
-                            : "hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl">
-                              {currentUser?.role === "doctor" ? "👤" : "👨‍⚕️"}
-                            </span>
-                            <div className="flex-1">
-                              <p className="font-semibold text-gray-900 text-sm">
-                                {contact.name}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {contact.specialty ||
-                                  (currentUser?.role === "doctor"
-                                    ? "Patient"
-                                    : "Healthcare Provider")}
-                              </p>
+                    <div className="conversation-list">
+                      {filteredContacts.length > 0 ? (
+                        filteredContacts.map((contact) => (
+                          <div
+                            key={contact._id}
+                            onClick={() => handleSelectConversation(contact)}
+                            className={`px-4 py-3 cursor-pointer border-b border-gray-100 transition ${
+                              selectedConversation?.id === contact._id
+                                ? "bg-blue-50 border-l-4 border-l-blue-500"
+                                : "hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl">
+                                  {currentUser?.role === "doctor" ? "👤" : "👨‍⚕️"}
+                                </span>
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900 text-sm">
+                                    {contact.name}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {contact.specialty ||
+                                      (currentUser?.role === "doctor"
+                                        ? "Patient"
+                                        : "Healthcare Provider")}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                             </div>
                           </div>
-                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-gray-500">
+                          <p>
+                            No{" "}
+                            {currentUser?.role === "doctor"
+                              ? "patients"
+                              : "doctors"}{" "}
+                            found
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Main Chat Area */}
+                  {selectedConversation ? (
+                    <div className="messages-main animate-fade-in">
+                      {/* Chat Header */}
+                      <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">
+                            {currentUser?.role === "doctor" ? "👤" : "👨‍⚕️"}
+                          </span>
+                          <div>
+                            <h2 className="font-bold text-gray-900">
+                              {selectedConversation.contactName}
+                            </h2>
+                            <p className="text-sm text-gray-600 flex items-center gap-2">
+                              {selectedConversation.specialty}
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                <span className="text-xs text-green-600">
+                                  Online
+                                </span>
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="p-2 rounded-lg hover:bg-gray-100 transition text-xl">
+                            📞
+                          </button>
+                          <button className="p-2 rounded-lg hover:bg-gray-100 transition text-xl">
+                            ℹ️
+                          </button>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-gray-500">
-                      <p>
-                        No{" "}
-                        {currentUser?.role === "doctor"
-                          ? "patients"
-                          : "doctors"}{" "}
-                        found
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Main Chat Area */}
-              {selectedConversation ? (
-                <div className="messages-main animate-fade-in">
-                  {/* Chat Header */}
-                  <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">
-                        {currentUser?.role === "doctor" ? "👤" : "👨‍⚕️"}
-                      </span>
-                      <div>
-                        <h2 className="font-bold text-gray-900">
-                          {selectedConversation.contactName}
-                        </h2>
-                        <p className="text-sm text-gray-600 flex items-center gap-2">
-                          {selectedConversation.specialty}
-                          <span className="flex items-center gap-1">
-                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                            <span className="text-xs text-green-600">
-                              Online
-                            </span>
-                          </span>
+                      {/* Messages */}
+                      <div className="messages-scroll">
+                        {messages.length > 0 ? (
+                          messages.map((message) => (
+                            <div key={message.id} className="message-bubble">
+                              {message.type === "sent" ? (
+                                <div className="flex justify-end">
+                                  <div className="max-w-xs">
+                                    <div className="bg-blue-500 text-white rounded-lg rounded-tr-none px-4 py-2">
+                                      <p className="text-sm break-words">
+                                        {message.text}
+                                      </p>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1 text-right">
+                                      {message.timestamp}
+                                    </p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex justify-start">
+                                  <div className="max-w-xs">
+                                    <div className="bg-gray-200 text-gray-900 rounded-lg rounded-tl-none px-4 py-2">
+                                      <p className="text-sm break-words">
+                                        {message.text}
+                                      </p>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1 text-left">
+                                      {message.timestamp}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-500">
+                            <p>No messages yet. Start a conversation!</p>
+                          </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+
+                      {/* Input Area */}
+                      <div className="px-6 py-4 bg-white border-t border-gray-200">
+                        <form
+                          onSubmit={handleSendMessage}
+                          className="flex gap-2"
+                        >
+                          <button
+                            type="button"
+                            className="p-2 rounded-lg hover:bg-gray-100 transition text-xl"
+                          >
+                            📎
+                          </button>
+                          <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Type your message..."
+                            className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <button
+                            type="submit"
+                            className={`px-6 py-2 rounded-lg font-semibold transition transform ${
+                              newMessage.trim()
+                                ? "bg-blue-500 text-white hover:bg-blue-600 hover:-translate-y-0.5"
+                                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                            }`}
+                          >
+                            Send
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="messages-main flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <p className="text-lg">
+                          Select a doctor to start messaging
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button className="p-2 rounded-lg hover:bg-gray-100 transition text-xl">
-                        📞
-                      </button>
-                      <button className="p-2 rounded-lg hover:bg-gray-100 transition text-xl">
-                        ℹ️
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="messages-scroll">
-                    {messages.length > 0 ? (
-                      messages.map((message) => (
-                        <div key={message.id} className="message-bubble">
-                          {message.type === "sent" ? (
-                            <div className="flex justify-end">
-                              <div className="max-w-xs">
-                                <div className="bg-blue-500 text-white rounded-lg rounded-tr-none px-4 py-2">
-                                  <p className="text-sm break-words">
-                                    {message.text}
-                                  </p>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1 text-right">
-                                  {message.timestamp}
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex justify-start">
-                              <div className="max-w-xs">
-                                <div className="bg-gray-200 text-gray-900 rounded-lg rounded-tl-none px-4 py-2">
-                                  <p className="text-sm break-words">
-                                    {message.text}
-                                  </p>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1 text-left">
-                                  {message.timestamp}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-500">
-                        <p>No messages yet. Start a conversation!</p>
-                      </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  {/* Input Area */}
-                  <div className="px-6 py-4 bg-white border-t border-gray-200">
-                    <form onSubmit={handleSendMessage} className="flex gap-2">
-                      <button
-                        type="button"
-                        className="p-2 rounded-lg hover:bg-gray-100 transition text-xl"
-                      >
-                        📎
-                      </button>
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type your message..."
-                        className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <button
-                        type="submit"
-                        className={`px-6 py-2 rounded-lg font-semibold transition transform ${
-                          newMessage.trim()
-                            ? "bg-blue-500 text-white hover:bg-blue-600 hover:-translate-y-0.5"
-                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        }`}
-                      >
-                        Send
-                      </button>
-                    </form>
-                  </div>
+                  )}
                 </div>
-              ) : (
-                <div className="messages-main flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <p className="text-lg">
-                      Select a doctor to start messaging
+
+                {/* Info Cards */}
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
+                    <div className="text-3xl mb-3">📞</div>
+                    <h3 className="font-bold text-gray-900 mb-2">
+                      Quick Response
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Get responses from doctors within 2-4 hours during working
+                      days
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
+                    <div className="text-3xl mb-3">🔒</div>
+                    <h3 className="font-bold text-gray-900 mb-2">
+                      Secure & Private
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      All messages are encrypted and comply with healthcare
+                      privacy standards
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
+                    <div className="text-3xl mb-3">📋</div>
+                    <h3 className="font-bold text-gray-900 mb-2">
+                      Message History
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Keep all your conversations for future reference and
+                      continuity of care
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Info Cards */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
-                <div className="text-3xl mb-3">📞</div>
-                <h3 className="font-bold text-gray-900 mb-2">Quick Response</h3>
-                <p className="text-sm text-gray-600">
-                  Get responses from doctors within 2-4 hours during working
-                  days
-                </p>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
-                <div className="text-3xl mb-3">🔒</div>
-                <h3 className="font-bold text-gray-900 mb-2">
-                  Secure & Private
-                </h3>
-                <p className="text-sm text-gray-600">
-                  All messages are encrypted and comply with healthcare privacy
-                  standards
-                </p>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
-                <div className="text-3xl mb-3">📋</div>
-                <h3 className="font-bold text-gray-900 mb-2">
-                  Message History
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Keep all your conversations for future reference and
-                  continuity of care
-                </p>
-              </div>
-            </div>
-          </>
-        )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
