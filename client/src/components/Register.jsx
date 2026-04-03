@@ -15,7 +15,7 @@ const Register = () => {
   const [number, setNumber] = useState("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
-  const [age, setAge] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
   const [address, setAddress] = useState("");
   const [symptoms, setSymptoms] = useState([]);
@@ -50,7 +50,7 @@ const Register = () => {
           ? {
               height,
               weight,
-              age,
+              dateOfBirth,
               gender,
               address,
             }
@@ -270,23 +270,21 @@ const Register = () => {
 
                   <div className="space-y-2">
                     <label
-                      htmlFor="age"
+                      htmlFor="dateOfBirth"
                       className={`text-sm font-semibold ${isDark ? "text-slate-200" : "text-slate-700"}`}
                     >
-                      Age
+                      Date of Birth
                     </label>
                     <input
-                      id="age"
-                      type="number"
-                      min="1"
+                      id="dateOfBirth"
+                      type="date"
                       required={isPatient}
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      placeholder="e.g. 45"
+                      value={dateOfBirth}
+                      onChange={(e) => setDateOfBirth(e.target.value)}
                       className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
                         isDark
-                          ? "border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-sky-500"
-                          : "border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-sky-500"
+                          ? "border-slate-700 bg-slate-800 text-white focus:border-sky-500"
+                          : "border-slate-300 bg-slate-50 text-slate-900 focus:border-sky-500"
                       }`}
                     />
                   </div>
