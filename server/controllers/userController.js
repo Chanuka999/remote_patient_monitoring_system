@@ -19,9 +19,9 @@ export const registerUser = async (req, res) => {
       role,
       number,
       symptoms,
-      age,
       height,
       weight,
+      dateOfBirth,
       gender,
       address,
     } = body;
@@ -80,14 +80,15 @@ export const registerUser = async (req, res) => {
     let parsedAge = null;
     let parsedHeight = null;
     let parsedWeight = null;
+    let normalizedDateOfBirth = "";
     let normalizedGender = "";
     let normalizedAddress = "";
 
     if (normalizedRole === "patient") {
       const missingFields = [];
-      if (age === undefined || age === "") missingFields.push("age");
       if (height === undefined || height === "") missingFields.push("height");
       if (weight === undefined || weight === "") missingFields.push("weight");
+      if (!String(dateOfBirth || "").trim()) missingFields.push("dateOfBirth");
       if (!String(gender || "").trim()) missingFields.push("gender");
       if (!String(address || "").trim()) missingFields.push("address");
 
@@ -98,24 +99,54 @@ export const registerUser = async (req, res) => {
         });
       }
 
-      parsedAge = Number(age);
       parsedHeight = Number(height);
       parsedWeight = Number(weight);
 
       if (
-        !Number.isFinite(parsedAge) ||
         !Number.isFinite(parsedHeight) ||
         !Number.isFinite(parsedWeight) ||
-        parsedAge <= 0 ||
         parsedHeight <= 0 ||
         parsedWeight <= 0
       ) {
         return res.status(400).json({
           success: false,
-          message:
-            "Patient age, height, and weight must be valid positive numbers",
+          message: "Patient height and weight must be valid positive numbers",
         });
       }
+
+      const dobDate = new Date(String(dateOfBirth));
+      if (Number.isNaN(dobDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Patient dateOfBirth must be a valid date",
+        });
+      }
+
+      const today = new Date();
+      if (dobDate > today) {
+        return res.status(400).json({
+          success: false,
+          message: "Patient dateOfBirth cannot be in the future",
+        });
+      }
+
+      parsedAge = today.getFullYear() - dobDate.getFullYear();
+      const monthDiff = today.getMonth() - dobDate.getMonth();
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < dobDate.getDate())
+      ) {
+        parsedAge -= 1;
+      }
+
+      if (parsedAge < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Patient dateOfBirth must produce a valid age",
+        });
+      }
+
+      normalizedDateOfBirth = String(dateOfBirth).trim();
 
       normalizedGender = String(gender).trim();
       normalizedAddress = String(address).trim();
@@ -127,6 +158,7 @@ export const registerUser = async (req, res) => {
       password: hash,
       role: normalizedRole,
       number: number || undefined,
+      dateOfBirth: normalizedDateOfBirth,
       gender: normalizedGender,
       address: normalizedAddress,
       age: parsedAge,
@@ -157,6 +189,7 @@ export const registerUser = async (req, res) => {
         age: savedUser.age,
         height: savedUser.height,
         weight: savedUser.weight,
+        dateOfBirth: savedUser.dateOfBirth || "",
         gender: savedUser.gender || "",
         address: savedUser.address || "",
         symptoms: savedUser.symptoms || [],
@@ -279,6 +312,7 @@ export const getMe = async (req, res) => {
         address: user.address || "",
         dateOfBirth: user.dateOfBirth || "",
         gender: user.gender || "",
+        imageUrl: user.imageUrl || "",
         symptoms: user.symptoms || [],
       },
     });
@@ -296,7 +330,8 @@ export const updateProfile = async (req, res) => {
     if (!payload || !payload.id)
       return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    const { name, number, address, dateOfBirth, gender } = req.body || {};
+    const { name, number, address, dateOfBirth, gender, imageUrl } =
+      req.body || {};
 
     const update = {};
     if (name !== undefined) update.name = String(name).trim();
@@ -305,6 +340,7 @@ export const updateProfile = async (req, res) => {
     if (dateOfBirth !== undefined)
       update.dateOfBirth = String(dateOfBirth).trim();
     if (gender !== undefined) update.gender = String(gender).trim();
+    if (imageUrl !== undefined) update.imageUrl = String(imageUrl).trim();
 
     const user = await User.findByIdAndUpdate(
       payload.id,
@@ -328,6 +364,7 @@ export const updateProfile = async (req, res) => {
         address: user.address || "",
         dateOfBirth: user.dateOfBirth || "",
         gender: user.gender || "",
+        imageUrl: user.imageUrl || "",
         symptoms: user.symptoms || [],
       },
     });
