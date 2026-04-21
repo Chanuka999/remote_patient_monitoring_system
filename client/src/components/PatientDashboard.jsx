@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PatientDoctorsList from "./PatientDoctorsList";
 import { useTheme } from "../context/ThemeContext";
 import Chat from "../Chat";
+import Navbar from "./Navbar";
 
 ChartJS.register(
   CategoryScale,
@@ -81,7 +82,7 @@ const metricCards = [
 ];
 
 const PatientDashboard = () => {
-    const [showDoctorsModal, setShowDoctorsModal] = useState(false);
+  const [showDoctorsModal, setShowDoctorsModal] = useState(false);
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -497,6 +498,7 @@ const PatientDashboard = () => {
     <div
       className={`min-h-screen ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}
     >
+      <Navbar />
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
         <aside
           className={`w-full shrink-0 lg:w-72 ${
@@ -664,21 +666,21 @@ const PatientDashboard = () => {
                   >
                     Book Appointment
                   </button>
-                      {/* Doctors Modal */}
-                      {showDoctorsModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                          <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full relative p-6">
-                            <button
-                              className="absolute top-3 right-3 text-2xl text-gray-400 hover:text-gray-700"
-                              onClick={() => setShowDoctorsModal(false)}
-                              aria-label="Close"
-                            >
-                              &times;
-                            </button>
-                            <PatientDoctorsList />
-                          </div>
-                        </div>
-                      )}
+                  {/* Doctors Modal */}
+                  {showDoctorsModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                      <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full relative p-6">
+                        <button
+                          className="absolute top-3 right-3 text-2xl text-gray-400 hover:text-gray-700"
+                          onClick={() => setShowDoctorsModal(false)}
+                          aria-label="Close"
+                        >
+                          &times;
+                        </button>
+                        <PatientDoctorsList />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
