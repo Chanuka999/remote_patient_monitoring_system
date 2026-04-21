@@ -82,13 +82,18 @@ const Navbar = () => {
   const navLinks = [
     {
       key: "home",
-      to: isAuthenticated ? getDashboardPath(userRole) : "/",
-      icon: "🏠",
+      to: "/patientDashboard",
+      icon: "\ud83c\udfe0",
     },
-    { key: "about", to: "/about", icon: "ℹ️" },
-    { key: "contact", to: "/contact", icon: "📞" },
-    { key: "hospital", to: "/hospital", icon: "🏥" },
-    { key: "doctor", label: "Doctor", to: "/doctor", icon: "👨‍⚕️" },
+    { key: "about", to: "/about", icon: "\u2139\ufe0f" },
+    { key: "contact", to: "/contact", icon: "\ud83d\udcde" },
+    { key: "hospital", to: "/hospital", icon: "\ud83c\udfe5" },
+    {
+      key: "doctor",
+      label: "Doctor",
+      to: "/doctor",
+      icon: "\ud83d\udc68\u200d\u2695\ufe0f",
+    },
   ];
 
   return (
@@ -105,7 +110,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16 md:h-20 gap-4">
           {/* Brand Logo */}
           <div
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/patientDashboard")}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
             <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
