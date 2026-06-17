@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "./Navbar";
 
 const PatientDashboardForm = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     systolic: "",
     diastolic: "",
@@ -262,8 +265,10 @@ const PatientDashboardForm = () => {
     ].every((k) => form[k] !== "");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-12 px-4">
-      <style>{`
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-12 px-4">
+        <style>{`
         @keyframes fadeInUp {
           from {
             opacity: 0;
@@ -299,6 +304,14 @@ const PatientDashboardForm = () => {
       `}</style>
 
       <div className="max-w-5xl mx-auto animate-form-card">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-6 inline-flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition duration-200"
+        >
+          <span>←</span> Back
+        </button>
+
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-block px-6 py-2 bg-blue-100 rounded-full mb-4">
@@ -573,7 +586,8 @@ const PatientDashboardForm = () => {
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

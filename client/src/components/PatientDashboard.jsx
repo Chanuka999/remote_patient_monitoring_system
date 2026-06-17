@@ -41,6 +41,16 @@ const getHealthStatus = (metric, value) => {
       critical: [120, Infinity],
     },
     SPO2: { normal: [95, 100], warning: [90, 95], critical: [0, 90] },
+    "Glucose Level": {
+      normal: [70, 100],
+      warning: [100, 126],
+      critical: [126, Infinity],
+    },
+    Temperature: {
+      normal: [36.1, 37.2],
+      warning: [37.2, 38.5],
+      critical: [38.5, Infinity],
+    },
     "Respiration Rate": {
       normal: [12, 20],
       warning: [20, 25],
@@ -73,13 +83,41 @@ const defaultChart = {
   ],
 };
 
-const metricCards = [
+const fallbackMetricCards = [
   { title: "Blood Pressure", value: "120/80 mmHg" },
   { title: "Heart Rate", value: "80 bpm" },
   { title: "SPO2", value: "98%" },
-  { title: "RPM Device Usage", value: "40 min" },
-  { title: "Respiration Rate", value: "18 bpm" },
+  { title: "Glucose Level", value: "100 mg/dL" },
+  { title: "Temperature", value: "36.6 °C" },
 ];
+
+const metricTrendConfig = {
+  "Blood Pressure": {
+    keys: ["systolic", "diastolic"],
+    labels: ["Systolic", "Diastolic"],
+    colors: ["rgb(239, 68, 68)", "rgb(249, 115, 22)"],
+  },
+  "Heart Rate": {
+    keys: ["heartRate"],
+    labels: ["Heart Rate"],
+    colors: ["rgb(14, 165, 233)"],
+  },
+  SPO2: {
+    keys: ["oxygenSaturation"],
+    labels: ["SPO2"],
+    colors: ["rgb(34, 197, 94)"],
+  },
+  "Glucose Level": {
+    keys: ["glucoseLevel"],
+    labels: ["Glucose"],
+    colors: ["rgb(168, 85, 247)"],
+  },
+  Temperature: {
+    keys: ["temperature"],
+    labels: ["Temp"],
+    colors: ["rgb(234, 179, 8)"],
+  },
+};
 
 const PatientDashboard = () => {
   const [showDoctorsModal, setShowDoctorsModal] = useState(false);
@@ -109,6 +147,7 @@ const PatientDashboard = () => {
   const [riskTrendData, setRiskTrendData] = useState([]);
   const [healthScoreTrendData, setHealthScoreTrendData] = useState([]);
   const [improvementIndicators, setImprovementIndicators] = useState([]);
+  const [metricTrends, setMetricTrends] = useState({});
   const [sosLoading, setSosLoading] = useState(false);
   const [sosMessage, setSosMessage] = useState("");
   const [sosError, setSosError] = useState("");
@@ -118,10 +157,56 @@ const PatientDashboard = () => {
   const [nearbyHospitals, setNearbyHospitals] = useState([]);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [hospitalAutoLoaded, setHospitalAutoLoaded] = useState(false);
+  const [latestMeasurements, setLatestMeasurements] = useState(null);
   const [now, setNow] = useState(() => new Date());
   const [symptoms, setSymptoms] = useState([]);
   const [newSymptom, setNewSymptom] = useState("");
   const [savingSymptoms, setSavingSymptoms] = useState(false);
+
+  const metricCards = latestMeasurements
+    ? [
+        {
+          title: "Blood Pressure",
+          value: `${latestMeasurements.systolic || 0}/${latestMeasurements.diastolic || 0} mmHg`,
+        },
+        {
+          title: "Heart Rate",
+          value: `${latestMeasurements.heartRate || 0} bpm`,
+        },
+        {
+          title: "SPO2",
+          value: `${latestMeasurements.oxygenSaturation || 0}%`,
+        },
+        {
+          title: "Glucose Level",
+          value: `${latestMeasurements.glucoseLevel || 0} mg/dL`,
+        },
+        {
+          title: "Temperature",
+          value: `${latestMeasurements.temperature || 0} °C`,
+        },
+      ]
+    : fallbackMetricCards;
+
+    const metricChartData = metricCards.map((metric) => {
+      const config = metricTrendConfig[metric.title];
+      if (!config) return defaultChart;
+
+      const labels = metricTrends[config.keys[0]]?.map((point) => point.label) || [];
+      const datasets = config.keys.map((key, index) => ({
+        label: config.labels[index] || key,
+        data: (metricTrends[key] || []).map((point) => point.value),
+        borderColor: config.colors[index] || "rgb(14, 165, 233)",
+        backgroundColor: `${config.colors[index] || "rgb(14, 165, 233)"}22`,
+        borderWidth: 2,
+        fill: false,
+        tension: 0.35,
+        pointRadius: 3,
+        pointBackgroundColor: config.colors[index] || "rgb(14, 165, 233)",
+      }));
+
+      return { labels, datasets };
+    });
 
   let storedUser = null;
   try {
@@ -178,6 +263,8 @@ const PatientDashboard = () => {
         setRiskTrendData(payload.riskTrend || []);
         setHealthScoreTrendData(payload.healthScoreTrend || []);
         setImprovementIndicators(payload.improvementIndicators || []);
+        setMetricTrends(payload.metricTrends || {});
+        setLatestMeasurements(payload.lastMeasurement || null);
       } catch {
         // ignore and keep existing fallback dashboard values
       } finally {
@@ -740,6 +827,18 @@ const PatientDashboard = () => {
                   </div>
                   <div className="inline-flex rounded-full p-1 bg-sky-500/10 ring-1 ring-sky-500/20">
                     <button
+                      onClick={() => setReportPeriod("hourly")}
+                      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                        reportPeriod === "hourly"
+                          ? "bg-sky-500 text-white"
+                          : isDark
+                            ? "text-slate-300 hover:bg-slate-800"
+                            : "text-slate-700 hover:bg-sky-100"
+                      }`}
+                    >
+                      Hourly Report
+                    </button>
+                    <button
                       onClick={() => setReportPeriod("weekly")}
                       className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
                         reportPeriod === "weekly"
@@ -990,9 +1089,9 @@ const PatientDashboard = () => {
                             : "border-slate-200 bg-slate-50"
                         }`}
                       >
-                        {chartData[index]?.labels ? (
+                        {metricChartData[index]?.labels?.length ? (
                           <Line
-                            data={chartData[index]}
+                            data={metricChartData[index]}
                             options={chartOptions}
                           />
                         ) : (
